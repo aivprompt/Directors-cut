@@ -33,7 +33,7 @@ const styleOptions = ["Cinematic", "Photorealistic", "Anime", "Documentary", "3D
 const shotOptions = ["Wide Shot", "Medium Shot", "Close-up", "Drone Shot"];
 const motionOptions = ["Slow Pan Left", "Dolly Zoom", "Static", "Handheld"];
 const lightingOptions = ["Golden Hour", "Dramatic Lighting", "Soft Natural Light"];
-const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3"];
+const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3"]; // This line was missing
 
 export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProps) {
   const [character, setCharacter] = useState("");
@@ -59,11 +59,11 @@ export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProp
 
   return (
     <div className="space-y-6">
-      <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Veo Works</AlertTitle><AlertDescription>Veo understands complex narratives. Describe your vision, and leverage its unique audio and dialogue capabilities.</AlertDescription></Alert>
+      <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Veo Works</AlertTitle><AlertDescription>Veo understands complex narratives. Be descriptive and leverage its unique audio and dialogue generation capabilities.</AlertDescription></Alert>
       
       <Card><CardHeader><CardTitle>Visual Foundation</CardTitle></CardHeader><CardContent className="space-y-4">
         <PromptField label="Character & Action" placeholder="e.g., A brave explorer discovering a hidden waterfall" value={character} onChange={(e) => setCharacter(e.target.value)} description={<>Click the {InlineIcon} to generate 3 character variants.</>} />
-        <PromptField label="Scene & Environment" placeholder="e.g., A lush, vibrant jungle filled with bioluminescent plants" value={scene} onChange={(e) => setScene(e.target.value)} description={<>Click the {InlineIcon} to generate 3 scene variants.</>} />
+        <PromptField label="Scene & Environment" placeholder="e.g., A lush, vibrant jungle with bioluminescent plants" value={scene} onChange={(e) => setScene(e.target.value)} description={<>Click the {InlineIcon} to generate 3 scene variants.</>} />
       </CardContent></Card>
       
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Film className="w-5 h-5" />Cinematic & Style Controls</CardTitle></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -80,7 +80,7 @@ export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProp
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5"><Label>Negative Prompt</Label><Input placeholder="e.g., blurry, cartoon, text" value={negative} onChange={e => setNegative(e.target.value)} /></div>
-        <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspect} onValueChange={setAspect}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectOptions.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
+        <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspect} onValueChange={setAspect}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectRatioOptions.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
       </div>
       
       <div className="space-y-1.5"><Label>Duration ({duration}s)</Label><Slider min={2} max={15} step={1} value={[duration]} onValueChange={([v]) => setDuration(v)} /></div>
