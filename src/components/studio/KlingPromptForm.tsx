@@ -11,8 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface KlingPromptFormProps { model: string; onPromptGenerated: (prompt: string) => void; }
 
-const PromptField = ({ label, placeholder, value, onChange }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; }) => (
-  <div className="space-y-1.5"><Label htmlFor={label} className="font-semibold">{label}</Label><div className="relative"><Textarea id={label} placeholder={placeholder} value={value} onChange={onChange} className="min-h-[80px] pr-10" /><button type="button" onClick={() => console.log(`Enhance ${label}`)} className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50" title={`Enhance ${label} with AI`}><Target size={20} className="text-red-500" /></button></div></div>
+const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
+
+const PromptField = ({ label, placeholder, value, onChange, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, description: React.ReactNode; }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={label} className="font-semibold">{label}</Label>
+    <div className="relative">
+      <Textarea id={label} placeholder={placeholder} value={value} onChange={onChange} className="min-h-[80px] pr-10" />
+      <button type="button" onClick={() => console.log(`Enhance ${label}`)} className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50" title={`Enhance ${label} with AI`}><Target size={20} className="text-red-500" /></button>
+    </div>
+    <p className="text-xs text-muted-foreground pt-1">{description}</p>
+  </div>
 );
 
 const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
@@ -44,9 +53,9 @@ export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormPr
 
   return (
     <div className="space-y-6">
-      <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Kling Works</AlertTitle><AlertDescription>Kling excels at realism and complex physics. Provide highly detailed descriptions for best results.</AlertDescription></Alert>
-      <PromptField label="Character & Action" placeholder="e.g., A knight in detailed plate armor swinging a sword" value={character} onChange={(e) => setCharacter(e.target.value)} />
-      <PromptField label="Scene & Environment" placeholder="e.g., A battlefield at sunset during a light rain" value={scene} onChange={(e) => setScene(e.target.value)} />
+      <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Kling Works</AlertTitle><AlertDescription>Kling excels at photorealism and complex physics. Be highly descriptive for the best results.</AlertDescription></Alert>
+      <PromptField label="Character & Action" placeholder="e.g., A knight in detailed plate armor swinging a sword" value={character} onChange={(e) => setCharacter(e.target.value)} description={<>Click the {InlineIcon} to generate 3 character variants.</>} />
+      <PromptField label="Scene & Environment" placeholder="e.g., A battlefield at sunset during a light rain" value={scene} onChange={(e) => setScene(e.target.value)} description={<>Click the {InlineIcon} to generate 3 scene variants.</>} />
       
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Camera className="w-5 h-5" />Cinematic Controls</CardTitle></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SelectField label="Artistic Style" placeholder="Style" value={style} onChange={setStyle} options={styleOptions} />
@@ -55,11 +64,7 @@ export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormPr
         <SelectField label="Camera Motion" placeholder="Motion" value={motion} onChange={setMotion} options={motionOptions} />
       </CardContent></Card>
 
-      <div className="space-y-1.5">
-        <Label>Physics Realism ({realism}%)</Label>
-        <Slider min={50} max={100} step={5} value={[realism]} onValueChange={([v]) => setRealism(v)} />
-      </div>
-
+      <div className="space-y-1.5"><Label>Physics Realism ({realism}%)</Label><Slider min={50} max={100} step={5} value={[realism]} onValueChange={([v]) => setRealism(v)} /></div>
       <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspectRatio} onValueChange={setAspectRatio}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectRatioOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select></div>
 
       <Button className="w-full py-6 text-base font-medium mt-4">Generate Kling Prompt</Button>
