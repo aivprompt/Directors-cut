@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target } from "lucide-react";
+import { Target, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,9 +13,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface LumaPromptFormProps {
-  // The model prop is kept for consistency, though not used in this prompt builder
   model: string;
   onPromptGenerated: (prompt: string) => void;
 }
@@ -30,13 +30,11 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
   const [aspectRatio, setAspectRatio] = useState("16:9");
 
   useEffect(() => {
-    // Luma responds well to natural language prompts with parameter flags
     const parts = [
       prompt,
       negativePrompt ? `--no ${negativePrompt}` : '',
       seed ? `--seed ${seed}` : '',
       aspectRatio ? `--ar ${aspectRatio}` : '',
-      // Assuming a guidance scale parameter might exist as --gs or similar
       guidance ? `--gs ${guidance}` : '' 
     ];
     const finalPrompt = parts.filter(Boolean).join(' ').trim();
@@ -52,7 +50,7 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
           <Textarea
             rows={5}
             className="w-full p-2 border rounded pr-10"
-            placeholder="A highly detailed description of your scene, character, and action. e.g., 'A majestic eagle soaring through a stormy sky, cinematic lighting'"
+            placeholder="Combine everything in one descriptive sentence: [Subject] [Action], [Scene], [Lighting], [Camera Move]"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
@@ -66,6 +64,15 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
           </button>
         </div>
       </div>
+
+      {/* Pro-Tip Alert Box */}
+      <Alert>
+        <Lightbulb className="h-4 w-4" />
+        <AlertTitle>Pro-Tip: Direct with Words</AlertTitle>
+        <AlertDescription>
+          For Luma, describe camera moves and lighting directly in your prompt. For example: "...the camera slowly zooms in" or "...in dramatic, high-contrast lighting."
+        </AlertDescription>
+      </Alert>
 
       {/* Negative Prompt */}
       <div className="space-y-1">
@@ -81,49 +88,3 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1">
           <Label htmlFor="luma-aspect-ratio">Aspect Ratio</Label>
-          <Select value={aspectRatio} onValueChange={setAspectRatio}>
-            <SelectTrigger id="luma-aspect-ratio">
-              <SelectValue placeholder="Select ratio" />
-            </SelectTrigger>
-            <SelectContent>
-              {aspectOptions.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="luma-seed">Seed</Label>
-          <Input
-            id="luma-seed"
-            type="number"
-            placeholder="Random"
-            value={seed ?? ""}
-            onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)}
-          />
-        </div>
-      </div>
-
-      {/* Guidance Scale Slider */}
-      <div className="space-y-1">
-        <Label className="font-medium">Guidance Scale ({guidance})</Label>
-        <p className="text-xs text-muted-foreground">
-          Lower values increase creativity, higher values adhere more strictly to the prompt.
-        </p>
-        <Slider
-          min={1}
-          max={20}
-          step={0.5}
-          value={[guidance]}
-          onValueChange={([v]) => setGuidance(v)}
-          className="mt-2"
-        />
-      </div>
-
-      <Button className="w-full py-6 text-base font-medium mt-4">
-        Generate Prompt
-      </Button>
-    </div>
-  );
-}
