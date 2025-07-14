@@ -1,53 +1,133 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target } from "lucide-react";
+import { Target, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-interface MidjourneyVideoPromptFormProps { model: string; onPromptGenerated: (prompt: string) => void; }
+interface MidjourneyPromptFormProps {
+  model: string;
+  onPromptGenerated: (prompt: string) => void;
+}
 
-const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick }: { label: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; onBullseyeClick: () => void; }) => (
-    <div className="space-y-1"><Label className="font-medium mb-1">{label}</Label><div className="relative"><Textarea rows={4} className="w-full p-2 border rounded pr-10" placeholder={placeholder} value={value} onChange={onChange} /><button type="button" onClick={onBullseyeClick} className="absolute top-2.5 right-2.5 p-1" title="Generate prompt variants"><Target size={20} className="text-red-500" /></button></div><p className="mt-1 text-sm text-gray-500">Click the <Target className="inline w-4 h-4 text-red-500" /> to generate 3 prompt variants.</p></div>
+// Reusable component for the main prompt text area
+const PromptField = ({ label, placeholder, value, onChange, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, description: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={label} className="font-semibold">{label}</Label>
+    <div className="relative">
+      <Textarea id={label} placeholder={placeholder} value={value} onChange={onChange} className="min-h-[80px] pr-10" />
+      <button type="button" onClick={() => console.log(`Enhance ${label}`)} className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50" title={`Enhance ${label} with AI`}>
+        <Target size={20} className="text-red-500" />
+      </button>
+    </div>
+    <p className="text-xs text-muted-foreground pt-1">{description}</p>
+  </div>
 );
 
-const SelectField = ({ label, value, onChange, options, placeholder }: { label: string; value: string; onChange: (value: string) => void; options: string[]; placeholder: string; }) => (
-  <div className="space-y-1"><Label>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map((option) => (<SelectItem key={option} value={option}>{option}</SelectItem>))}</SelectContent></Select></div>
+// Reusable component for dropdown menus
+const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={label}>{label}</Label>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger>
+      <SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+    </Select>
+  </div>
 );
 
-const options = { version: ["5.2", "niji"], chaos: ["0", "25", "50"], aspectRatio: ["16:9", "1:1"] };
+// Options for Midjourney parameters
+const versionOptions = ["6", "5.2", "5.1", "niji 6"];
+const aspectRatioOptions = ["16:9", "1:1", "9:16", "4:3", "3:2", "7:4"];
+const qualityOptions = ["0.25", "0.5", "1"];
 
-export default function MidjourneyVideoPromptForm({ model, onPromptGenerated }: MidjourneyVideoPromptFormProps) {
+export default function MidjourneyVideoPromptForm({ onPromptGenerated }: MidjourneyPromptFormProps) {
   const [prompt, setPrompt] = useState("");
-  const [version, setVersion] = useState("");
-  const [chaos, setChaos] = useState("");
-  const [aspectRatio, setAspectRatio] = useState("");
-  const [videoToggle, setVideoToggle] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [version, setVersion] = useState("6");
+  const [aspectRatio, setAspectRatio] = useState("16:9");
+  const [chaos, setChaos] = useState(0);
+  const [quality, setQuality] = useState("1");
+  const [stylize, setStylize] = useState(100);
+  const [seed, setSeed] = useState<number | null>(null);
+  const [tile, setTile] = useState(false);
+  const [video, setVideo] = useState(true);
 
   useEffect(() => {
-    // Simplified prompt builder for Midjourney
-    const promptString = `${prompt} --ar ${aspectRatio} --v ${version} --c ${chaos} ${videoToggle ? '--video' : ''}`;
-    onPromptGenerated(promptString);
-  }, [prompt, version, chaos, aspectRatio, videoToggle, onPromptGenerated]);
-
-  const askVariants = () => console.log("Ask variants for Midjourney");
+    // Assemble the Midjourney prompt with all its parameters
+    const parts = [
+      prompt,
+      negativePrompt ? `--no ${negativePrompt}` : '',
+      aspectRatio ? `--ar ${aspectRatio}` : '',
+      version ? `--v ${version}` : '',
+      chaos > 0 ? `--c ${chaos}` : '',
+      quality !== "1" ? `--q ${quality}` : '',
+      stylize !== 100 ? `--s ${stylize}` : '',
+      seed ? `--seed ${seed}` : '',
+      tile ? '--tile' : '',
+      video ? '--video' : ''
+    ];
+    const finalPrompt = parts.filter(Boolean).join(' ').trim();
+    onPromptGenerated(finalPrompt);
+  }, [prompt, negativePrompt, version, aspectRatio, chaos, quality, stylize, seed, tile, video, onPromptGenerated]);
 
   return (
     <div className="space-y-6">
-      <PromptField label="Prompt Text" placeholder="Enter your video prompt..." value={prompt} onChange={(e) => setPrompt(e.target.value)} onBullseyeClick={askVariants} />
-      <div className="grid grid-cols-3 gap-4">
-        <SelectField label="Version" placeholder="Select Version" value={version} onChange={setVersion} options={options.version} />
-        <SelectField label="Chaos" placeholder="Select Chaos" value={chaos} onChange={setChaos} options={options.chaos} />
-        <SelectField label="Aspect Ratio" placeholder="Select Aspect Ratio" value={aspectRatio} onChange={setAspectRatio} options={options.aspectRatio} />
+       <Alert>
+        <Lightbulb className="h-4 w-4" />
+        <AlertTitle>How Midjourney Works</AlertTitle>
+        <AlertDescription>
+          Midjourney uses parameters like `--ar` or `--v`. Select your options below and our AI will build the perfect prompt.
+        </AlertDescription>
+      </Alert>
+
+      <PromptField label="Prompt Text" placeholder="e.g., A cinematic shot of a serene waterfall at sunrise..." value={prompt} onChange={(e) => setPrompt(e.target.value)} description={<>Click the <Target className="inline h-3 w-3 stroke-red-600" /> to generate prompt variants.</>} />
+
+      <div className="space-y-1.5">
+        <Label htmlFor="mj-negative">Negative Prompt</Label>
+        <Input id="mj-negative" placeholder="e.g., text, people, watermark" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} />
       </div>
-      <div className="flex items-center">
-        <Checkbox id="videoToggle-mj" checked={videoToggle} onCheckedChange={(checked) => setVideoToggle(Boolean(checked))} className="mr-2" />
-        <Label htmlFor="videoToggle-mj" className="text-sm">Include video build-up (<code>--video</code>)</Label>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <SelectField label="Version" placeholder="Version" value={version} onChange={setVersion} options={versionOptions} />
+        <SelectField label="Aspect Ratio" placeholder="Aspect Ratio" value={aspectRatio} onChange={setAspectRatio} options={aspectRatioOptions} />
+        <SelectField label="Quality" placeholder="Quality" value={quality} onChange={setQuality} options={qualityOptions} />
       </div>
-      <Button className="mt-4 w-full py-2 bg-black text-white rounded hover:bg-gray-900">Generate Prompt</Button>
+
+      <div className="space-y-1.5">
+        <Label>Stylize (0-1000)</Label>
+        <Slider min={0} max={1000} step={10} value={[stylize]} onValueChange={([v]) => setStylize(v)} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Chaos (0-100)</Label>
+        <Slider min={0} max={100} step={1} value={[chaos]} onValueChange={([v]) => setChaos(v)} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="mj-seed">Seed</Label>
+          <Input id="mj-seed" type="number" placeholder="Random" value={seed ?? ""} onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)} />
+        </div>
+        <div className="flex items-end pb-1 space-x-4">
+            <div className="flex items-center space-x-2"><Checkbox id="mj-tile" checked={tile} onCheckedChange={(checked) => setTile(Boolean(checked))}/><Label htmlFor="mj-tile">Tile</Label></div>
+            <div className="flex items-center space-x-2"><Checkbox id="mj-video" checked={video} onCheckedChange={(checked) => setVideo(Boolean(checked))} /><Label htmlFor="mj-video">Video</Label></div>
+        </div>
+      </div>
+
+      <Button className="w-full py-6 text-base font-medium mt-4">
+        Generate Midjourney Prompt
+      </Button>
     </div>
   );
 }
