@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Target, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,17 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface RunwayPromptFormProps { onPromptGenerated: (prompt: string) => void; }
 
 const aspectOptions = ["16:9", "9:16", "1:1", "4:3"];
 const styleOptions = ["Cinematic", "Claymation", "Watercolor", "Pixel Art", "Infrared", "Photorealistic"];
+// New options for cinematic shot styles
+const shotStyleOptions = ["None", "Drone Follow Shot", "FPV Drone Shot", "Sweeping Crane Shot", "Handheld Shaky-Cam", "Low Angle Tracking Shot", "Dolly Zoom"];
 const motionOptions = { Pan: ["None", "Left", "Right"], Tilt: ["None", "Up", "Down"], Roll: ["None", "Clockwise", "Counter-clockwise"], Zoom: ["None", "In", "Out"] };
+const helper: Record<string, string> = { "Aspect Ratio": "Canvas shape", Duration: "Total seconds (1-4)", Seed: "Fixed number for reproducible output", "Style Preset": "Overall aesthetic treatment", "Style Strength": "How intensely the preset is applied", Pan: "Horizontal camera move", Tilt: "Vertical camera move", Roll: "Rotate camera (Dutch angle)", Zoom: "Move in or out", "Cinematic Shot Style": "Adds descriptive cinematic terms to the prompt for stylistic effect." };
+
 
 export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPromptFormProps) {
   const [prompt, setPrompt] = useState("");
@@ -22,6 +27,7 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
   const [upscale, setUpscale] = useState(false);
   const [aspect, setAspect] = useState("16:9");
   const [style, setStyle] = useState("Cinematic");
+  const [shotStyle, setShotStyle] = useState("None"); // New state for the cinematic shot style
   const [strength, setStrength] = useState(50);
   const [pan, setPan] = useState("None");
   const [tilt, setTilt] = useState("None");
@@ -29,11 +35,18 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
   const [zoom, setZoom] = useState("None");
 
   useEffect(() => {
-    const motion = [ pan !== "None" && `pan ${pan.toLowerCase()}`, tilt !== "None" && `tilt ${tilt.toLowerCase()}`, roll !== "None" && `roll ${roll.toLowerCase()}`, zoom !== "None" && `zoom ${zoom.toLowerCase()}` ].filter(Boolean).join(' ');
-    const composed = `${prompt} ${style ? `in the style of ${style}` : ''} ${motion}`.trim();
-    const params = ` --ar ${aspect} --motion ${Math.round(strength / 10)} ${seed ? `--seed ${seed}` : ''} ${upscale ? '--upscale' : ''}`;
-    onPromptGenerated(composed + params);
-  }, [prompt, seed, upscale, aspect, style, strength, pan, tilt, roll, zoom, onPromptGenerated]);
+    // The prompt is now composed of the shot style and the main text
+    const composedPrompt = [shotStyle !== "None" ? shotStyle : '', prompt].filter(Boolean).join(', ');
+
+    const motionValue = Math.round(strength / 10); // Runway motion is 0-10
+    
+    // The mechanical camera moves are added as parameters
+    const cameraParams = [ pan !== "None" && `pan ${pan.toLowerCase()}`, tilt !== "None" && `tilt ${tilt.toLowerCase()}`, roll !== "None" && `roll ${roll.toLowerCase()}`, zoom !== "None" && `zoom ${zoom.toLowerCase()}` ].filter(Boolean).join(' ');
+
+    const finalPrompt = `${composedPrompt} @camera{${cameraParams}} --style ${style.toLowerCase()} --motion ${motionValue} --ar ${aspect} ${seed ? `--seed ${seed}` : ''} ${upscale ? '--upscale' : ''}`.trim();
+    
+    onPromptGenerated(finalPrompt);
+  }, [prompt, seed, upscale, aspect, style, strength, pan, tilt, roll, zoom, shotStyle, onPromptGenerated]);
 
   const Dropdown = ({ label, value, set, options }: { label: string, value: string, set: (v: string) => void, options: string[] }) => (
     <div className="space-y-1.5"><Label>{label}</Label><Select value={value} onValueChange={set}><SelectTrigger><SelectValue placeholder={`Select ${label}`} /></SelectTrigger><SelectContent>{options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select></div>
@@ -42,25 +55,32 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
   return (
     <div className="space-y-6">
       <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Runway Works</AlertTitle><AlertDescription>Describe your scene, then use the powerful sliders and dropdowns to control the camera and style precisely.</AlertDescription></Alert>
+      
       <div className="space-y-1.5"><Label className="font-semibold">Prompt</Label><Textarea placeholder="e.g., A futuristic city skyline at dusk, raining" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="min-h-[100px]" /></div>
-      <div className="p-4 border rounded-lg space-y-4 bg-muted/30">
-        <h3 className="font-semibold text-foreground">Camera Motion</h3>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <Dropdown label="Style Preset" value={style} set={setStyle} options={styleOptions} />
+        {/* New Cinematic Shot Style Dropdown */}
+        <Dropdown label="Cinematic Shot Style" value={shotStyle} set={setShotStyle} options={shotStyleOptions} />
+      </div>
+
+      <Card><CardHeader><CardTitle>Mechanical Camera Motion</CardTitle></CardHeader><CardContent className="space-y-4">
+        <div className="space-y-1.5"><Label>Motion Strength ({strength}%)</Label><Slider min={0} max={100} step={1} value={[strength]} onValueChange={([v]) => setStrength(v)} /></div>
         <div className="grid grid-cols-2 gap-4">
           <Dropdown label="Pan" value={pan} set={setPan} options={motionOptions.Pan} />
           <Dropdown label="Tilt" value={tilt} set={setTilt} options={motionOptions.Tilt} />
           <Dropdown label="Roll" value={roll} set={setRoll} options={motionOptions.Roll} />
           <Dropdown label="Zoom" value={zoom} set={setZoom} options={motionOptions.Zoom} />
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Dropdown label="Style Preset" value={style} set={setStyle} options={styleOptions} />
-        <div className="space-y-1.5"><Label>Style Strength ({strength}%)</Label><Slider min={0} max={100} step={1} value={[strength]} onValueChange={([v]) => setStrength(v)} /></div>
-      </div>
+      </CardContent></Card>
+      
       <div className="grid grid-cols-2 gap-4">
         <Dropdown label="Aspect Ratio" value={aspect} set={setAspect} options={aspectOptions} />
         <div className="space-y-1.5"><Label htmlFor="runway-seed">Seed</Label><Input id="runway-seed" type="number" placeholder="Random" value={seed ?? ""} onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)} /></div>
       </div>
+
       <div className="flex items-center space-x-2"><Checkbox id="runway-upscale" checked={upscale} onCheckedChange={(c) => setUpscale(Boolean(c))} /><Label htmlFor="runway-upscale">Upscale to 4K</Label></div>
+      
       <Button className="w-full py-6 text-base font-medium mt-4">Generate Runway Prompt</Button>
     </div>
   );
