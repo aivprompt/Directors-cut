@@ -1,135 +1,103 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface LumaPromptFormProps {
   model: string;
   onPromptGenerated: (prompt: string) => void;
 }
 
-const aspectOptions = ["16:9", "9:16", "1:1", "4:3", "3:2"];
-
 export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPromptFormProps) {
-  const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("");
-  const [seed, setSeed] = useState<number | null>(null);
-  const [guidance, setGuidance] = useState(8);
-  const [aspectRatio, setAspectRatio] = useState("16:9");
+  // State for each separate input field
+  const [character, setCharacter] = useState("");
+  const [scene, setScene] = useState("");
+  const [lighting, setLighting] = useState("");
+  const [camera, setCamera] = useState("");
+  const [style, setStyle] = useState("");
 
   useEffect(() => {
+    // This temporarily combines the fields. Later, this data will be sent to your AI.
     const parts = [
-      prompt,
-      negativePrompt ? `--no ${negativePrompt}` : '',
-      seed ? `--seed ${seed}` : '',
-      aspectRatio ? `--ar ${aspectRatio}` : '',
-      guidance ? `--gs ${guidance}` : '' 
+      character,
+      scene,
+      lighting,
+      camera,
+      style,
     ];
-    const finalPrompt = parts.filter(Boolean).join(' ').trim();
+    const finalPrompt = parts.filter(Boolean).join(', ');
     onPromptGenerated(finalPrompt);
-  }, [prompt, negativePrompt, seed, guidance, aspectRatio, onPromptGenerated]);
+  }, [character, scene, lighting, camera, style, onPromptGenerated]);
 
   return (
-    <div className="space-y-6">
-      {/* Main Prompt */}
-      <div className="space-y-1">
-        <Label className="font-medium text-lg">Prompt</Label>
-        <div className="relative">
-          <Textarea
-            rows={5}
-            className="w-full p-2 border rounded pr-10"
-            placeholder="Combine everything in one descriptive sentence: [Subject] [Action], [Scene], [Lighting], [Camera Move]"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => console.log("Enhance Luma Prompt")}
-            className="absolute top-2.5 right-2.5 p-1"
-            title="Generate prompt variants"
-          >
-            <Target size={20} className="text-red-500" />
-          </button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Describe the key elements of your video. Our AI Prompt Engineer will weave them into a perfect, descriptive prompt for Luma.
+      </p>
 
-      {/* Pro-Tip Alert Box */}
-      <Alert>
-        <Lightbulb className="h-4 w-4" />
-        <AlertTitle>Pro-Tip: Direct with Words</AlertTitle>
-        <AlertDescription>
-          For Luma, describe camera moves and lighting directly in your prompt. For example: "...the camera slowly zooms in" or "...in dramatic, high-contrast lighting."
-        </AlertDescription>
-      </Alert>
-
-      {/* Negative Prompt */}
-      <div className="space-y-1">
-        <Label className="font-medium">Negative Prompt</Label>
-        <Input
-          placeholder="e.g., blurry, watermark, text, deformed"
-          value={negativePrompt}
-          onChange={(e) => setNegativePrompt(e.target.value)}
+      {/* Character Field */}
+      <div className="space-y-1.5">
+        <Label htmlFor="luma-character" className="font-semibold">Character / Subject</Label>
+        <Textarea
+          id="luma-character"
+          placeholder="e.g., A grizzled old fisherman mending his nets"
+          value={character}
+          onChange={(e) => setCharacter(e.target.value)}
+          className="min-h-[60px]"
         />
       </div>
 
-      {/* Settings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1">
-          <Label htmlFor="luma-aspect-ratio">Aspect Ratio</Label>
-          <Select value={aspectRatio} onValueChange={setAspectRatio}>
-            <SelectTrigger id="luma-aspect-ratio">
-              <SelectValue placeholder="Select ratio" />
-            </SelectTrigger>
-            <SelectContent>
-              {aspectOptions.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="luma-seed">Seed</Label>
-          <Input
-            id="luma-seed"
-            type="number"
-            placeholder="Random"
-            value={seed ?? ""}
-            onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)}
-          />
-        </div>
+      {/* Scene Field */}
+      <div className="space-y-1.5">
+        <Label htmlFor="luma-scene" className="font-semibold">Scene / Environment</Label>
+        <Textarea
+          id="luma-scene"
+          placeholder="e.g., Inside a rustic, weathered cabin on a stormy night"
+          value={scene}
+          onChange={(e) => setScene(e.target.value)}
+          className="min-h-[60px]"
+        />
       </div>
 
-      {/* Guidance Scale Slider */}
-      <div className="space-y-1">
-        <Label className="font-medium">Guidance Scale ({guidance})</Label>
-        <p className="text-xs text-muted-foreground">
-          Lower values increase creativity, higher values adhere more strictly to the prompt.
-        </p>
-        <Slider
-          min={1}
-          max={20}
-          step={0.5}
-          value={[guidance]}
-          onValueChange={([v]) => setGuidance(v)}
-          className="mt-2"
+      {/* Lighting Field */}
+      <div className="space-y-1.5">
+        <Label htmlFor="luma-lighting" className="font-semibold">Lighting</Label>
+        <Textarea
+          id="luma-lighting"
+          placeholder="e.g., Warm, dusty sunlight streaming through a single window"
+          value={lighting}
+          onChange={(e) => setLighting(e.target.value)}
+          className="min-h-[60px]"
+        />
+      </div>
+
+      {/* Camera Field */}
+      <div className="space-y-1.5">
+        <Label htmlFor="luma-camera" className="font-semibold">Camera Shot / Motion</Label>
+        <Textarea
+          id="luma-camera"
+          placeholder="e.g., The camera slowly pushes in on his face, capturing his thoughtful expression"
+          value={camera}
+          onChange={(e) => setCamera(e.target.value)}
+          className="min-h-[60px]"
+        />
+      </div>
+      
+      {/* Style Field */}
+      <div className="space-y-1.5">
+        <Label htmlFor="luma-style" className="font-semibold">Artistic Style</Label>
+        <Textarea
+          id="luma-style"
+          placeholder="e.g., Cinematic, 35mm film, hyperrealistic, anime aesthetic"
+          value={style}
+          onChange={(e) => setStyle(e.target.value)}
+          className="min-h-[60px]"
         />
       </div>
 
       <Button className="w-full py-6 text-base font-medium mt-4">
-        Generate Prompt
+        Generate Luma Prompt
       </Button>
     </div>
   );
