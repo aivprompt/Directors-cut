@@ -12,42 +12,26 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Slider } from "@/components/ui/slider"; // Import the Slider component
 
 interface LumaPromptFormProps {
   model: string;
   onPromptGenerated: (prompt: string) => void;
 }
 
-// Helper for the small inline bullseye icon
-const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
-
-// Updated PromptField component that now includes the description
 const PromptField = ({ label, placeholder, value, onChange, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, description: React.ReactNode }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label} className="font-semibold">{label}</Label>
     <div className="relative">
-      <Textarea
-        id={label}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        className="min-h-[80px] pr-10"
-      />
-      <button
-        type="button"
-        onClick={() => console.log(`Enhance ${label}`)}
-        className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50"
-        title={`Enhance ${label} with AI`}
-      >
+      <Textarea id={label} placeholder={placeholder} value={value} onChange={onChange} className="min-h-[80px] pr-10" />
+      <button type="button" onClick={() => console.log(`Enhance ${label}`)} className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50" title={`Enhance ${label} with AI`}>
         <Target size={20} className="text-red-500" />
       </button>
     </div>
-    {/* The description is now rendered here */}
     <p className="text-xs text-muted-foreground pt-1">{description}</p>
   </div>
 );
 
-// Reusable component for dropdown menus
 const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label}>{label}</Label>
@@ -70,12 +54,17 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
   const [cameraShot, setCameraShot] = useState("");
   const [cameraMotion, setCameraMotion] = useState("");
   const [style, setStyle] = useState("");
+  const [guidance, setGuidance] = useState(8); // Add state for guidance scale
 
   useEffect(() => {
+    // Combine all fields into a single prompt string
     const parts = [ character, scene, lighting, cameraShot, cameraMotion, style ];
     const finalPrompt = parts.filter(Boolean).join(', ');
-    onPromptGenerated(finalPrompt);
-  }, [character, scene, lighting, cameraShot, cameraMotion, style, onPromptGenerated]);
+    
+    // Add the guidance scale parameter at the end
+    const fullPrompt = `${finalPrompt} --gs ${guidance}`.trim();
+    onPromptGenerated(fullPrompt);
+  }, [character, scene, lighting, cameraShot, cameraMotion, style, guidance, onPromptGenerated]);
 
   return (
     <div className="space-y-6">
@@ -87,31 +76,30 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
         </AlertDescription>
       </Alert>
 
-      <PromptField
-        label="Character Description"
-        placeholder="Who or what is the focus? e.g. 'A curious fox exploring ancient ruins'"
-        value={character}
-        onChange={(e) => setCharacter(e.target.value)}
-        description={
-          <>Click the {InlineIcon} to generate 3 character variants.</>
-        }
-      />
-
-      <PromptField
-        label="Scene Description"
-        placeholder="Describe the environment... e.g. 'A snowy mountain peak at sunrise'"
-        value={scene}
-        onChange={(e) => setScene(e.target.value)}
-        description={
-          <>Click the {InlineIcon} to generate 3 scene variants.</>
-        }
-      />
+      <PromptField label="Character Description" placeholder="Who or what is the focus? e.g. 'A curious fox...'" value={character} onChange={(e) => setCharacter(e.target.value)} description={<>Click the <Target className="inline h-3 w-3 stroke-red-600" /> to generate 3 character variants.</>} />
+      <PromptField label="Scene Description" placeholder="Describe the environment... e.g. 'A snowy mountain peak...'" value={scene} onChange={(e) => setScene(e.target.value)} description={<>Click the <Target className="inline h-3 w-3 stroke-red-600" /> to generate 3 scene variants.</>} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SelectField label="Lighting Style" placeholder="Select a lighting style" value={lighting} onChange={setLighting} options={lightingOptions} />
         <SelectField label="Artistic Style" placeholder="Select an artistic style" value={style} onChange={setStyle} options={artisticStyleOptions} />
         <SelectField label="Camera Shot" placeholder="Select a shot type" value={cameraShot} onChange={setCameraShot} options={cameraShotOptions} />
         <SelectField label="Camera Motion" placeholder="Select a camera motion" value={cameraMotion} onChange={setCameraMotion} options={cameraMotionOptions} />
+      </div>
+
+      {/* Guidance Scale Slider is now included */}
+      <div className="space-y-1.5">
+        <Label className="font-medium">Guidance Scale ({guidance})</Label>
+        <p className="text-xs text-muted-foreground">
+          Lower values increase creativity ("weird stuff"), higher values strictly follow the prompt.
+        </p>
+        <Slider
+          min={1}
+          max={20}
+          step={0.5}
+          value={[guidance]}
+          onValueChange={([v]) => setGuidance(v)}
+          className="mt-2"
+        />
       </div>
 
       <Button className="w-full py-6 text-base font-medium mt-4">
