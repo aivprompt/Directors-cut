@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from './ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card'; // Also import sub-components
 import { Check } from 'lucide-react';
 
 const MembershipSection = () => {
