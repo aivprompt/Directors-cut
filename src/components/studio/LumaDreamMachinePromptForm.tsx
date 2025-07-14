@@ -18,8 +18,11 @@ interface LumaPromptFormProps {
   onPromptGenerated: (prompt: string) => void;
 }
 
-// Reusable component for the main text areas with the bullseye icon
-const PromptField = ({ label, placeholder, value, onChange }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; }) => (
+// Helper for the small inline bullseye icon
+const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
+
+// Updated PromptField component that now includes the description
+const PromptField = ({ label, placeholder, value, onChange, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, description: React.ReactNode }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label} className="font-semibold">{label}</Label>
     <div className="relative">
@@ -39,6 +42,8 @@ const PromptField = ({ label, placeholder, value, onChange }: { label: string, p
         <Target size={20} className="text-red-500" />
       </button>
     </div>
+    {/* The description is now rendered here */}
+    <p className="text-xs text-muted-foreground pt-1">{description}</p>
   </div>
 );
 
@@ -53,7 +58,6 @@ const SelectField = ({ label, placeholder, value, onChange, options }: { label: 
   </div>
 );
 
-// Predefined options for the dropdowns
 const lightingOptions = ["Cinematic Lighting", "Natural Daylight", "Film Noir", "Golden Hour", "Blue Hour", "High-Key Lighting", "Low-Key Lighting", "Neon Lit", "Dramatic Rim Lighting"];
 const cameraShotOptions = ["Medium Shot", "Close-up", "Extreme Close-up", "Wide Shot", "Establishing Shot", "Full Shot", "Cowboy Shot", "Point of View (POV)"];
 const cameraMotionOptions = ["Static Camera", "Slow Pan Left", "Slow Pan Right", "Tilt Up", "Tilt Down", "Dolly Zoom In", "Handheld Shaky Cam", "Sweeping Aerial Shot"];
@@ -68,7 +72,6 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
   const [style, setStyle] = useState("");
 
   useEffect(() => {
-    // This combines all the fields into a single prompt for Luma
     const parts = [ character, scene, lighting, cameraShot, cameraMotion, style ];
     const finalPrompt = parts.filter(Boolean).join(', ');
     onPromptGenerated(finalPrompt);
@@ -89,6 +92,9 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
         placeholder="Who or what is the focus? e.g. 'A curious fox exploring ancient ruins'"
         value={character}
         onChange={(e) => setCharacter(e.target.value)}
+        description={
+          <>Click the {InlineIcon} to generate 3 character variants.</>
+        }
       />
 
       <PromptField
@@ -96,6 +102,9 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
         placeholder="Describe the environment... e.g. 'A snowy mountain peak at sunrise'"
         value={scene}
         onChange={(e) => setScene(e.target.value)}
+        description={
+          <>Click the {InlineIcon} to generate 3 scene variants.</>
+        }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
