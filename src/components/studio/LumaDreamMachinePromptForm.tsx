@@ -88,3 +88,49 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1">
           <Label htmlFor="luma-aspect-ratio">Aspect Ratio</Label>
+          <Select value={aspectRatio} onValueChange={setAspectRatio}>
+            <SelectTrigger id="luma-aspect-ratio">
+              <SelectValue placeholder="Select ratio" />
+            </SelectTrigger>
+            <SelectContent>
+              {aspectOptions.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="luma-seed">Seed</Label>
+          <Input
+            id="luma-seed"
+            type="number"
+            placeholder="Random"
+            value={seed ?? ""}
+            onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)}
+          />
+        </div>
+      </div>
+
+      {/* Guidance Scale Slider */}
+      <div className="space-y-1">
+        <Label className="font-medium">Guidance Scale ({guidance})</Label>
+        <p className="text-xs text-muted-foreground">
+          Lower values increase creativity, higher values adhere more strictly to the prompt.
+        </p>
+        <Slider
+          min={1}
+          max={20}
+          step={0.5}
+          value={[guidance]}
+          onValueChange={([v]) => setGuidance(v)}
+          className="mt-2"
+        />
+      </div>
+
+      <Button className="w-full py-6 text-base font-medium mt-4">
+        Generate Prompt
+      </Button>
+    </div>
+  );
+}
