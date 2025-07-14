@@ -6,3 +6,4 @@ import KlingPromptForm from '@/components/studio/KlingPromptForm';
 import LumaPromptForm from '@/components/studio/LumaDreamMachinePromptForm';
 import PixversePromptForm from '@/components/studio/PixversePromptForm';
 import MidjourneyVideoPromptForm from '@/components/studio/MidjourneyVideoPromptForm';
+export default ActionButtons;
