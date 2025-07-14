@@ -1,108 +1,57 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
-interface KlingPromptFormProps {
-  model: string;
-  onPromptGenerated: (prompt: string) => void;
-}
+interface KlingPromptFormProps { model: string; onPromptGenerated: (prompt: string) => void; }
 
-const BullseyeBtn = ({ onClick }: { onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="absolute top-2.5 right-2.5 rounded-full bg-white/80 p-1 shadow focus:outline-none"
-  >
-    <Target className="h-4 w-4 stroke-red-600" />
-  </button>
+const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick }: { label: string, placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; onBullseyeClick: () => void; }) => (
+  <div className="space-y-1">
+    <Label>{label}</Label>
+    <div className="relative">
+      <Textarea rows={6} placeholder={placeholder} value={value} onChange={onChange} className="pr-12" />
+      <button type="button" onClick={onBullseyeClick} className="absolute top-2.5 right-2.5 rounded-full bg-white/80 p-1 shadow focus:outline-none"><Target className="w-4 h-4 stroke-red-600" /></button>
+    </div>
+  </div>
 );
 
-const PromptField = ({
-  placeholder,
-  value,
-  onChange,
-  onBullseyeClick,
-  fieldType,
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onBullseyeClick: () => void;
-  fieldType: "character" | "scene";
-}) => {
-  const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
-
-  return (
-    <div className="space-y-1">
-      <div className="relative">
-        <Textarea
-          rows={6}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          className="pr-12"
-        />
-        <BullseyeBtn onClick={onBullseyeClick} />
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Click the {InlineIcon} to generate 3 AI-tuned {fieldType} variants.
-      </p>
-    </div>
-  );
-};
-
 const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3"];
-// ... other Kling options ...
+const durationOptions = ["5s", "10s"];
+const cameraMotionOptions = ["Static", "Tilt", "Horizontal Zoom", "Vertical Zoom"];
+const creativityOptions = ["Max Relevance", "Balanced", "Max Creativity"];
 
-const KlingPromptForm: React.FC<KlingPromptFormProps> = ({ onPromptGenerated }) => {
+export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormProps) {
   const [scene, setScene] = useState("");
   const [character, setCharacter] = useState("");
-  // ... other Kling state hooks ...
-
-  const composed = [
-    // ... prompt composing logic ...
-    scene ? `. Scene: ${scene}.` : "",
-    character ? ` Character: ${character}.` : ""
-  ].filter(Boolean).join(" ");
+  const [aspect, setAspect] = useState<string>("");
+  const [duration, setDuration] = useState<string>("");
+  const [cameraMotion, setCameraMotion] = useState<string>("");
+  const [creativity, setCreativity] = useState<string>("");
 
   useEffect(() => {
+    const composed = [ cameraMotion, creativity, aspect, duration, scene ? `. Scene: ${scene}.` : "", character ? ` Character: ${character}.` : "" ].filter(Boolean).join(", ");
     onPromptGenerated(composed.trim());
-  }, [composed, onPromptGenerated]);
+  }, [scene, character, aspect, duration, cameraMotion, creativity, onPromptGenerated]);
 
   const enhanceField = (field: "scene" | "character") => console.log(`Enhance ${field}`);
+  const Field = ({ label, value, set, options }: { label: string; value: string; set: (v: string) => void; options: string[] }) => (
+    <div className="space-y-1"><Label>{label}</Label><Select value={value} onValueChange={set}><SelectTrigger className="h-9 w-full truncate"><SelectValue placeholder={`Select ${label}`} /></SelectTrigger><SelectContent>{options.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}</SelectContent></Select></div>
+  );
 
   return (
-    <section className="space-y-8">
-      <PromptField
-        placeholder="Character Description — who or what is the focus?"
-        value={character}
-        onChange={(e) => setCharacter(e.target.value)}
-        onBullseyeClick={() => enhanceField("character")}
-        fieldType="character"
-      />
-      <PromptField
-        placeholder="Scene Description — describe the environment"
-        value={scene}
-        onChange={(e) => setScene(e.target.value)}
-        onBullseyeClick={() => enhanceField("scene")}
-        fieldType="scene"
-      />
-      {/* ... Other Kling form controls ... */}
-      <Button className="w-full py-6 text-base font-medium" onClick={() => onPromptGenerated(composed.trim())}>
-        Generate Prompt
-      </Button>
+    <section className="space-y-6">
+      <PromptField label="Character Description" placeholder="Who or what is the focus?" value={character} onChange={(e) => setCharacter(e.target.value)} onBullseyeClick={() => enhanceField("character")} />
+      <PromptField label="Scene Description" placeholder="Describe the environment" value={scene} onChange={(e) => setScene(e.target.value)} onBullseyeClick={() => enhanceField("scene")} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Aspect Ratio" value={aspect} set={setAspect} options={aspectRatioOptions} />
+        <Field label="Video Duration" value={duration} set={setDuration} options={durationOptions} />
+        <Field label="Camera Motion" value={cameraMotion} set={setCameraMotion} options={cameraMotionOptions} />
+        <Field label="Creativity vs Relevance" value={creativity} set={setCreativity} options={creativityOptions} />
+      </div>
+      <Button className="w-full py-6 text-base font-medium">Generate Prompt</Button>
     </section>
   );
 };
-
-export default KlingPromptForm;

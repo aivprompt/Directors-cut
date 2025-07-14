@@ -1,134 +1,78 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-interface Veo3PromptFormProps {
-  onPromptGenerated: (prompt: string) => void;
-}
+interface Veo3PromptFormProps { onPromptGenerated: (prompt: string) => void; }
 
-const BullseyeBtn = ({ onClick }: { onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="absolute top-2.5 right-2.5 p-1 bg-white rounded-full shadow focus:outline-none"
-  >
-    <Target className="w-4 h-4 stroke-red-600" />
-  </button>
-);
-
-const TextAreaWithIcon = ({
-  placeholder,
-  value,
-  onChange,
-  onBullseyeClick,
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onBullseyeClick: () => void;
-}) => (
+const TextAreaWithIcon = ({ placeholder, value, onChange, onBullseyeClick }: { placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; onBullseyeClick: () => void; }) => (
   <div className="relative w-full">
-    <Textarea
-      rows={4}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className="pr-12"
-    />
-    <BullseyeBtn onClick={onBullseyeClick} />
+    <Textarea rows={4} placeholder={placeholder} value={value} onChange={onChange} className="pr-12" />
+    <button type="button" onClick={onBullseyeClick} className="absolute top-2.5 right-2.5 p-1 bg-white rounded-full shadow focus:outline-none"><Target className="w-4 h-4 stroke-red-600" /></button>
   </div>
 );
 
 const styleOptions = ["Cinematic", "Photorealistic", "Anime", "Documentary", "Stop-motion", "3D Animation"];
-const aspectOptions = ["16:9","9:16","1:1","4:3","3:4"];
-const motionLabels = ["Pan Left","Pan Right","Tilt Up","Tilt Down","Zoom In","Zoom Out","Dolly","Crane Shot","Aerial Shot"];
+const aspectOptions = ["16:9", "9:16", "1:1", "4:3", "3:4"];
+const motionLabels = ["Pan Left", "Pan Right", "Tilt Up", "Tilt Down", "Zoom In", "Zoom Out", "Dolly", "Crane Shot", "Aerial Shot"];
+const helper: Record<string, string> = { "Style": "Overall visual aesthetic", "Aspect Ratio": "Canvas shape", "Duration": "Total seconds (1-10 supported)", "Seed": "Fixed number to reproduce results", "Camera Motion": "Combine moves for dynamic shots" };
 
-const helper: Record<string,string> = {
-  "Style": "Overall visual aesthetic",
-  "Aspect Ratio": "Canvas shape",
-  "Duration": "Total seconds (1‑10 supported)",
-  "Seed": "Fixed number to reproduce results",
-  "Camera Motion": "Combine moves for dynamic shots",
-};
+export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProps) {
+  const [scene, setScene] = useState("");
+  const [character, setCharacter] = useState("");
+  const [negative, setNegative] = useState("");
+  const [style, setStyle] = useState("");
+  const [aspect, setAspect] = useState("");
+  const [duration, setDuration] = useState(5);
+  const [seed, setSeed] = useState<number | null>(null);
+  const [motions, setMotions] = useState<string[]>([]);
+  const [audioDesc, setAudioDesc] = useState("");
+  const [audioDialogue, setAudioDialogue] = useState(false);
+  const [dialogueText, setDialogueText] = useState("");
+  const [showHints, setShowHints] = useState(true);
 
-const Veo3PromptForm: React.FC<Veo3PromptFormProps> = ({ onPromptGenerated }) => {
-  const [scene,setScene]=useState("");
-  const [character,setCharacter]=useState("");
-  const [negative,setNegative]=useState("");
-  const [style,setStyle]=useState("");
-  const [aspect,setAspect]=useState("");
-  const [duration,setDuration]=useState(5);
-  const [seed,setSeed]=useState<number|null>(null);
-  const [motions,setMotions]=useState<string[]>([]);
-  const [audioDesc,setAudioDesc]=useState("");
-  const [audioDialogue,setAudioDialogue]=useState(false);
-  const [dialogueText,setDialogueText]=useState("");
-  const [showHints,setShowHints]=useState(true);
+  useEffect(() => {
+    const promptParts = [ style && `${style} style`, aspect, `${duration}s`, motions.length && motions.join(" + "), scene && `Scene: ${scene}`, character && `Character: ${character}`, negative && `--no ${negative}`, audioDesc && `Audio: ${audioDesc}`, audioDialogue && dialogueText && `Dialogue: ${dialogueText}` ].filter(Boolean).join(" | ");
+    onPromptGenerated(promptParts);
+  }, [scene, character, negative, style, aspect, duration, seed, motions, audioDesc, audioDialogue, dialogueText, onPromptGenerated]);
 
-  const promptParts = [
-    style && `${style} style`,
-    aspect,
-    `${duration}s`,
-    motions.length && motions.join(" + "),
-    scene && `Scene: ${scene}`,
-    character && `Character: ${character}`,
-    negative && `--no ${negative}`,
-    audioDesc && `Audio: ${audioDesc}`,
-    audioDialogue && dialogueText && `Dialogue: ${dialogueText}`,
-  ].filter(Boolean).join(" | ");
-
-  useEffect(()=>onPromptGenerated(promptParts),[promptParts,onPromptGenerated]);
-
-  const InlineIcon=<Target className="w-3 h-3 inline stroke-red-600"/>;
-  const toggleMotion=(m:string)=>setMotions(prev=>prev.includes(m)?prev.filter(x=>x!==m):[...prev,m]);
+  const toggleMotion = (m: string) => setMotions(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
 
   return (
     <section className="space-y-6">
-      <div className="flex items-center justify-end gap-2">
-        <Switch checked={showHints} onCheckedChange={setShowHints} id="hint" />
-        <Label htmlFor="hint" className="text-sm">Show hints</Label>
+      <div className="flex items-center justify-end gap-2"><Switch checked={showHints} onCheckedChange={setShowHints} id="hint-veo" /><Label htmlFor="hint-veo" className="text-sm">Show hints</Label></div>
+      <div className="space-y-1">
+        <Label>Character Description</Label>
+        <TextAreaWithIcon placeholder="e.g. Brave explorer in steampunk diving suit" value={character} onChange={(e) => setCharacter(e.target.value)} onBullseyeClick={() => console.log("Enhance Character")} />
       </div>
       <div className="space-y-1">
-        <TextAreaWithIcon
-          placeholder="e.g. Brave explorer in steampunk diving suit"
-          value={character}
-          onChange={(e) => setCharacter(e.target.value)}
-          onBullseyeClick={() => console.log("Enhance Character")}
-        />
-        <p className="text-xs text-muted-foreground">Click the {InlineIcon} to generate 3 AI‑tuned character variants.</p>
+        <Label>Scene Description</Label>
+        <TextAreaWithIcon placeholder="e.g. Submerged temple ruins bathed in emerald light" value={scene} onChange={(e) => setScene(e.target.value)} onBullseyeClick={() => console.log("Enhance Scene")} />
       </div>
       <div className="space-y-1">
-        <TextAreaWithIcon
-          placeholder="e.g. Submerged temple ruins bathed in emerald light"
-          value={scene}
-          onChange={(e) => setScene(e.target.value)}
-          onBullseyeClick={() => console.log("Enhance Scene")}
-        />
-        <p className="text-xs text-muted-foreground">Click the {InlineIcon} to generate 3 AI‑tuned scene variants.</p>
+        <Label>Negative Prompt {showHints && <span className="text-xs text-muted-foreground">(undesired elements)</span>}</Label>
+        <Input placeholder="blurry, watermark, low‑resolution" value={negative} onChange={e => setNegative(e.target.value)} />
       </div>
-      <div className="space-y-1">
-        <Label>Negative Prompt {showHints&&<span className="text-xs text-muted-foreground">(undesired elements)</span>}</Label>
-        <Input placeholder="blurry, watermark, low‑resolution" value={negative} onChange={e=>setNegative(e.target.value)} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-1"><Label>Style</Label><Select value={style} onValueChange={setStyle}><SelectTrigger><SelectValue placeholder="Choose style" /></SelectTrigger><SelectContent>{styleOptions.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent></Select>{showHints && <p className="text-xs text-muted-foreground">{helper["Style"]}</p>}</div>
+        <div className="space-y-1"><Label>Aspect Ratio</Label><Select value={aspect} onValueChange={setAspect}><SelectTrigger><SelectValue placeholder="Select ratio" /></SelectTrigger><SelectContent>{aspectOptions.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select>{showHints && <p className="text-xs text-muted-foreground">{helper["Aspect Ratio"]}</p>}</div>
       </div>
-      {/* ... Other form controls from Veo3 form ... */}
-      <Button className="w-full py-6 mt-4" onClick={()=>onPromptGenerated(promptParts)}>Generate Prompt</Button>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-1"><Label>Duration ({duration}s)</Label><Slider min={1} max={10} step={1} value={[duration]} onValueChange={([v]) => setDuration(v)} />{showHints && <p className="text-xs text-muted-foreground">{helper["Duration"]}</p>}</div>
+        <div className="space-y-1"><Label>Seed</Label><Input type="number" placeholder="Optional fixed seed" value={seed ?? ""} onChange={e => setSeed(e.target.value ? parseInt(e.target.value) : null)} />{showHints && <p className="text-xs text-muted-foreground">{helper["Seed"]}</p>}</div>
+      </div>
+      <div className="space-y-1"><Label>Camera Motion</Label><div className="grid grid-cols-2 gap-2">{motionLabels.map(m => (<label key={m} className="flex items-center gap-2 text-sm"><Checkbox checked={motions.includes(m)} onCheckedChange={() => toggleMotion(m)} />{m}</label>))}</div>{showHints && <p className="text-xs text-muted-foreground">{helper["Camera Motion"]}</p>}</div>
+      <div className="space-y-1"><Label>Audio Description (optional)</Label><Textarea rows={3} placeholder="e.g. Gentle rainfall with distant thunder..." value={audioDesc} onChange={e => setAudioDesc(e.target.value)} /></div>
+      <div className="flex items-center gap-2"><Checkbox checked={audioDialogue} onCheckedChange={(checked) => setAudioDialogue(Boolean(checked))} id="dlg-veo" /><Label htmlFor="dlg-veo">Enable Dialogue</Label></div>
+      {audioDialogue && (<Textarea rows={3} placeholder="Character A: 'We must leave.'" value={dialogueText} onChange={e => setDialogueText(e.target.value)} />)}
+      <Button className="w-full py-6 mt-4">Generate Prompt</Button>
     </section>
   );
 };
-
-export default Veo3PromptForm;
