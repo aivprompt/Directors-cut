@@ -2,13 +2,13 @@ const { VercelRequest, VercelResponse } = require('@vercel/node');
 
 const generateFinalPrompt = (targetModel: string, inputs: any): string => {
   let finalPrompt = '';
-  // ... (logic for each case remains the same)
+  
   switch (targetModel) {
     case 'Luma':
       const lumaParts = [ inputs.character, inputs.scene, inputs.lighting, inputs.cameraShot, inputs.cameraMotion, inputs.style ];
       finalPrompt = lumaParts.filter(Boolean).join(', ') + ` --gs ${inputs.guidance}`;
       break;
-    case 'Midjourney':
+    case 'Midjourney Video Studio':
       const mjKeywords = [inputs.shot, inputs.angle, inputs.lighting].filter(Boolean).join(', ');
       const mjMainPrompt = [inputs.prompt, mjKeywords].filter(Boolean).join(', ');
       const mjParams = [ inputs.negativePrompt ? `--no ${inputs.negativePrompt}` : '', inputs.aspectRatio ? `--ar ${inputs.aspectRatio}` : '', inputs.version ? `--v ${inputs.version}` : '', inputs.chaos > 0 ? `--c ${inputs.chaos}` : '', inputs.stylize !== 100 ? `--s ${inputs.stylize}` : '', inputs.video ? '--video' : '' ].filter(Boolean).join(' ');
@@ -34,7 +34,8 @@ const generateFinalPrompt = (targetModel: string, inputs: any): string => {
       break;
     case 'Pixverse Studio':
       const pixKeywords = [inputs.shot, inputs.lighting, inputs.style].filter(Boolean).join(', ');
-      const pixPrompt = `${inputs.prompt}, ${keywords}`.trim();
+      // The fix is here: changed 'keywords' to 'pixKeywords'
+      const pixPrompt = `${inputs.prompt}, ${pixKeywords}`.trim(); 
       const pixParams = [ inputs.negativePrompt ? `--no ${inputs.negativePrompt}` : '', inputs.seed ? `--seed ${inputs.seed}` : '', inputs.characterRef ? `--cref ${inputs.characterRef}` : '' ].filter(Boolean).join(' ');
       finalPrompt = `${pixPrompt} ${pixParams}`.trim();
       break;
