@@ -1,6 +1,5 @@
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import ActionButtons from '@/components/ActionButtons';
 import MembershipSection from '@/components/MembershipSection';
 import Footer from '@/components/Footer';
 
@@ -9,7 +8,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <HeroSection />
-      <ActionButtons />
+      {/* ActionButtons component is correctly removed from the homepage */}
       <MembershipSection />
       <Footer />
     </div>

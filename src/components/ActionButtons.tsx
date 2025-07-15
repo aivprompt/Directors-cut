@@ -1,15 +1,14 @@
-// src/components/ActionButtons.tsx
-
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription, // <-- Import SheetDescription
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Card } from '@/components/ui/card';
 
-// Step 1: Import all your prompt form components as before
+// Import all your prompt form components
 import Veo3PromptForm from '@/components/studio/Veo3PromptForm';
 import RunwayGen4PromptForm from '@/components/studio/RunwayGen4PromptForm';
 import KlingPromptForm from '@/components/studio/KlingPromptForm';
@@ -44,7 +43,6 @@ const StudioComponent = ({ name }: { name: string }) => {
 };
 
 const ActionButtons = () => {
-  // The buttons array now just holds the data, not the components themselves
   const buttons = [
     { id: 1, title: 'Veo 3+ Studio', description: 'Advanced AI video generation', image: '/lovable-uploads/18d5dcd3-c99a-4836-8371-123df19ab67d.png' },
     { id: 2, title: 'Runway Gen4+ Studio', description: 'Advanced AI video generation', image: '/lovable-uploads/a0da0a3e-2ca4-4ac7-bc47-e96657646eed.png' },
@@ -80,6 +78,10 @@ const ActionButtons = () => {
               <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto bg-background border-border p-0">
                 <SheetHeader className="p-6 bg-muted/50 border-b">
                   <SheetTitle className="text-2xl text-foreground">{button.title}</SheetTitle>
+                  {/* ADDED THIS DESCRIPTION TO FIX THE WARNING */}
+                  <SheetDescription className="sr-only">
+                    A form for generating prompts for the {button.title}.
+                  </SheetDescription>
                 </SheetHeader>
                 <div className="p-6">
                   {/* Use the new helper component to render the correct form */}
