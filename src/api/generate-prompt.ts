@@ -1,4 +1,4 @@
-const { VercelRequest, VercelResponse } = require('@vercel/node');
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const generateFinalPrompt = (targetModel: string, inputs: any): string => {
   let finalPrompt = '';
@@ -34,7 +34,6 @@ const generateFinalPrompt = (targetModel: string, inputs: any): string => {
       break;
     case 'Pixverse Studio':
       const pixKeywords = [inputs.shot, inputs.lighting, inputs.style].filter(Boolean).join(', ');
-      // The fix is here: changed 'keywords' to 'pixKeywords'
       const pixPrompt = `${inputs.prompt}, ${pixKeywords}`.trim(); 
       const pixParams = [ inputs.negativePrompt ? `--no ${inputs.negativePrompt}` : '', inputs.seed ? `--seed ${inputs.seed}` : '', inputs.characterRef ? `--cref ${inputs.characterRef}` : '' ].filter(Boolean).join(' ');
       finalPrompt = `${pixPrompt} ${pixParams}`.trim();
@@ -46,7 +45,10 @@ const generateFinalPrompt = (targetModel: string, inputs: any): string => {
   return finalPrompt;
 };
 
-module.exports = (request: typeof VercelRequest, response: typeof VercelResponse) => {
+export default function handler(
+  request: VercelRequest,
+  response: VercelResponse,
+) {
   if (request.method !== 'POST') {
     return response.status(405).json({ message: 'Only POST requests allowed' });
   }
