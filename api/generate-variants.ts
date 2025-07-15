@@ -1,5 +1,5 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { VercelRequest, VercelResponse } from '@vercel/node'; // Line 1
+import { GoogleGenerativeAI } from '@google/generative-ai'; // Line 2
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
@@ -7,9 +7,9 @@ const systemInstruction = `You are a creative writing assistant for a film direc
 
 Example:
 User Input: "a man on a beach"
-Your Output: ["A lone figure silhouetted against a fiery sunset on a windswept, desolate beach.", "A weathered fisherman mending his nets on a shore littered with driftwood and seaweed.", "A joyful tourist building a sandcastle with his laughing child on a sun-drenched beach."]`
+Your Output: ["A lone figure silhouetted against a fiery sunset on a windswept, desolate beach.", "A weathered fisherman mending his nets on a shore littered with driftwood and seaweed.", "A joyful tourist building a sandcastle with his laughing child on a sun-drenched beach."]`;
 
-export default async function handler(
+export default async function handler( // This is the export default for Vercel
   request: VercelRequest,
   response: VercelResponse,
 ) {
@@ -34,4 +34,4 @@ export default async function handler(
     console.error("Error in generate-variants:", error);
     response.status(500).json({ message: 'An error occurred while generating suggestions.' });
   }
-};
+}
