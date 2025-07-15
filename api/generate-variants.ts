@@ -1,5 +1,5 @@
-const { VercelRequest, VercelResponse } = require('@vercel/node');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
@@ -9,7 +9,10 @@ Example:
 User Input: "a man on a beach"
 Your Output: ["A lone figure silhouetted against a fiery sunset on a windswept, desolate beach.", "A weathered fisherman mending his nets on a shore littered with driftwood and seaweed.", "A joyful tourist building a sandcastle with his laughing child on a sun-drenched beach."]`
 
-module.exports = async (request: typeof VercelRequest, response: typeof VercelResponse) => {
+export default async function handler(
+  request: VercelRequest,
+  response: VercelResponse,
+) {
   if (request.method !== 'POST') {
     return response.status(405).json({ message: 'Only POST requests allowed' });
   }
