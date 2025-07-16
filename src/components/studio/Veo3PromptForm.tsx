@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Target, Lightbulb, Mic, MessageSquare, Film, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-// Reusable component for text areas with the bullseye icon
+interface Veo3PromptFormProps { onPromptGenerated: (prompt: string) => void; }
+
+const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
+
 const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, onBullseyeClick: () => Promise<void>, description: React.ReactNode }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label} className="font-semibold">{label}</Label>
@@ -23,21 +26,17 @@ const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, des
   </div>
 );
 
-// Reusable component for dropdown menus
 const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
   <div className="space-y-1.5"><Label htmlFor={label}>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
 );
 
-// Options for Veo 3
 const styleOptions = ["Cinematic", "Photorealistic", "Anime", "Documentary", "3D Animation", "Vibrant Color"];
 const shotOptions = ["Wide Shot", "Medium Shot", "Close-up", "Drone Shot"];
 const motionOptions = ["Slow Pan Left", "Dolly Zoom", "Static", "Handheld"];
 const lightingOptions = ["Golden Hour", "Dramatic Lighting", "Soft Natural Light"];
 const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3"];
-const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
 
 export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerated: (prompt: string) => void; }) {
-  // State for all form fields
   const [character, setCharacter] = useState("");
   const [scene, setScene] = useState("");
   const [negative, setNegative] = useState("");
@@ -49,15 +48,12 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
   const [duration, setDuration] = useState(5);
   const [audioDesc, setAudioDesc] = useState("");
   const [dialogue, setDialogue] = useState("");
-
-  // State for AI features
   const [variants, setVariants] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [finalPrompt, setFinalPrompt] = useState("");
 
-  // Function to call the variant generation API
   const handleEnhance = async (fieldType: 'character' | 'scene') => {
     const inputText = fieldType === 'character' ? character : scene;
     if (!inputText) return alert("Please enter some text before enhancing.");
@@ -77,14 +73,12 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
     }
   };
 
-  // Function to handle selecting a variant from the dialog
   const handleVariantSelect = (variant: string) => {
     if (activeField === 'character') setCharacter(variant);
     else if (activeField === 'scene') setScene(variant);
     setIsDialogOpen(false);
   };
 
-  // Function for the main "Generate" button
   const handleGenerateClick = async () => {
     setIsLoading(true);
     setFinalPrompt("");
@@ -94,7 +88,7 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       setFinalPrompt(data.finalPrompt);
-      onPromptGenerated(data.finalPrompt); // This passes the prompt up to the parent if needed
+      onPromptGenerated(data.finalPrompt);
     } catch (error) {
       alert("Failed to generate the final prompt.");
     } finally {

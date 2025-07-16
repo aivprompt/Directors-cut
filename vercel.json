@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/generate-variants.js": {
+      "includeFiles": "node_modules/@google/generative-ai/**"
+    }
+  }
+}

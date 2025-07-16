@@ -26,7 +26,8 @@ interface LumaPromptFormProps {
   onPromptGenerated: (prompt: string) => void;
 }
 
-// Reusable component for the main text areas
+const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
+
 const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, onBullseyeClick: () => Promise<void>, description: React.ReactNode }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label} className="font-semibold">{label}</Label>
@@ -40,7 +41,6 @@ const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, des
   </div>
 );
 
-// Reusable component for dropdown menus
 const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
   <div className="space-y-1.5"><Label htmlFor={label}>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
 );
@@ -58,12 +58,11 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
   const [cameraMotion, setCameraMotion] = useState("");
   const [style, setStyle] = useState("");
   const [guidance, setGuidance] = useState(8);
-  
   const [variants, setVariants] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [finalPrompt, setFinalPrompt] = useState(""); // New state for the final prompt
+  const [finalPrompt, setFinalPrompt] = useState("");
 
   const handleEnhance = async (fieldType: 'character' | 'scene') => {
     const inputText = fieldType === 'character' ? character : scene;
@@ -90,22 +89,17 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
     setIsDialogOpen(false);
   };
 
-  // New function for the main generate button
   const handleGenerateClick = async () => {
     setIsLoading(true);
-    setFinalPrompt(""); // Clear previous prompt
-    const payload = {
-      targetModel: 'Luma',
-      inputs: { character, scene, lighting, cameraShot, cameraMotion, style, guidance }
-    };
+    setFinalPrompt("");
+    const payload = { targetModel: 'Luma', inputs: { character, scene, lighting, cameraShot, cameraMotion, style, guidance } };
     try {
       const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
-      setFinalPrompt(data.finalPrompt); // Set the final prompt to be displayed
-      onPromptGenerated(data.finalPrompt); // Also pass it up
+      setFinalPrompt(data.finalPrompt);
+      onPromptGenerated(data.finalPrompt);
     } catch (error) {
-      console.error("Failed to generate prompt:", error);
       alert("Failed to generate the final prompt.");
     } finally {
       setIsLoading(false);
@@ -116,8 +110,8 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
     <>
       <div className="space-y-6">
         <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Luma Works</AlertTitle><AlertDescription>Fill out the fields below and our AI Prompt Engineer will weave them into a perfect, descriptive prompt for Luma.</AlertDescription></Alert>
-        <PromptField label="Character Description" placeholder="Who or what is the focus? e.g. 'A curious fox...'" value={character} onChange={(e) => setCharacter(e.target.value)} onBullseyeClick={() => handleEnhance('character')} description={<>Click the <Target className="inline h-3 w-3 stroke-red-600" /> to generate 3 character variants.</>} />
-        <PromptField label="Scene Description" placeholder="Describe the environment... e.g. 'A snowy mountain peak...'" value={scene} onChange={(e) => setScene(e.target.value)} onBullseyeClick={() => handleEnhance('scene')} description={<>Click the <Target className="inline h-3 w-3 stroke-red-600" /> to generate 3 scene variants.</>} />
+        <PromptField label="Character Description" placeholder="Who or what is the focus? e.g. 'A curious fox...'" value={character} onChange={(e) => setCharacter(e.target.value)} onBullseyeClick={() => handleEnhance('character')} description={<>Click the {InlineIcon} to generate 3 character variants.</>} />
+        <PromptField label="Scene Description" placeholder="Describe the environment... e.g. 'A snowy mountain peak...'" value={scene} onChange={(e) => setScene(e.target.value)} onBullseyeClick={() => handleEnhance('scene')} description={<>Click the {InlineIcon} to generate 3 scene variants.</>} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SelectField label="Lighting Style" placeholder="Select a lighting style" value={lighting} onChange={setLighting} options={lightingOptions} />
           <SelectField label="Artistic Style" placeholder="Select an artistic style" value={style} onChange={setStyle} options={artisticStyleOptions} />
@@ -125,30 +119,11 @@ export default function LumaDreamMachinePromptForm({ onPromptGenerated }: LumaPr
           <SelectField label="Camera Motion" placeholder="Select a camera motion" value={cameraMotion} onChange={setCameraMotion} options={cameraMotionOptions} />
         </div>
         <div className="space-y-1.5"><Label className="font-medium">Guidance Scale ({guidance})</Label><p className="text-xs text-muted-foreground">Lower values increase creativity, higher values strictly follow the prompt.</p><Slider min={1} max={20} step={0.5} value={[guidance]} onValueChange={([v]) => setGuidance(v)} className="mt-2" /></div>
-        
-        {/* The main button now calls the new handleGenerateClick function */}
-        <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">
-          {isLoading ? 'Generating...' : '✨ Enhance and Generate Prompt'}
-        </Button>
-
-        {/* This new section will display the final prompt */}
-        {finalPrompt && (
-          <div className="space-y-1.5 pt-4">
-            <Label className="font-medium text-lg">Final Luma Prompt</Label>
-            <div className="relative">
-              <Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" />
-              <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : '✨ Enhance and Generate Prompt'}</Button>
+        {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Luma Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
       </div>
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>
-          <div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader><div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div></DialogContent>
       </Dialog>
     </>
   );

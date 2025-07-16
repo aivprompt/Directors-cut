@@ -50,6 +50,7 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
             setVariants(data.variants);
             setIsDialogOpen(true);
         } catch (error) {
+            console.error("Failed to fetch variants:", error);
             alert("Failed to get suggestions. Please try again.");
         } finally {
             setIsLoading(false);
