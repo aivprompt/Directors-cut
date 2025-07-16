@@ -3,10 +3,10 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription, // <-- Import SheetDescription
+  SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Import all your prompt form components
 import Veo3PromptForm from '@/components/studio/Veo3PromptForm';
@@ -16,27 +16,27 @@ import LumaPromptForm from '@/components/studio/LumaDreamMachinePromptForm';
 import PixversePromptForm from '@/components/studio/PixversePromptForm';
 import MidjourneyVideoPromptForm from '@/components/studio/MidjourneyVideoPromptForm';
 
-// Dummy onPromptGenerated function for the forms
-const handlePromptGenerated = (prompt: string) => {
-  console.log("Generated Prompt:", prompt);
-  // In a real app, you would handle the generated prompt here
+// This function can be used to display the final engineered prompt
+const handleFinalPrompt = (prompt: string) => {
+  console.log("Final Engineered Prompt:", prompt);
+  // In a real app, you might display this in a final preview box
 };
 
-// This new helper component explicitly renders the correct form
+// This helper component explicitly renders the correct form
 const StudioComponent = ({ name }: { name: string }) => {
   switch (name) {
     case 'Veo 3+ Studio':
-      return <Veo3PromptForm onPromptGenerated={handlePromptGenerated} />;
+      return <Veo3PromptForm onPromptGenerated={handleFinalPrompt} />;
     case 'Runway Gen4+ Studio':
-      return <RunwayGen4PromptForm onPromptGenerated={handlePromptGenerated} />;
+      return <RunwayGen4PromptForm onPromptGenerated={handleFinalPrompt} />;
     case 'Kling 2.0+ Studio':
-      return <KlingPromptForm model="Kling" onPromptGenerated={handlePromptGenerated} />;
+      return <KlingPromptForm model="Kling" onPromptGenerated={handleFinalPrompt} />;
     case 'Luma Dream Machine Studio':
-      return <LumaPromptForm model="Luma" onPromptGenerated={handlePromptGenerated} />;
+      return <LumaPromptForm model="Luma" onPromptGenerated={handleFinalPrompt} />;
     case 'Pixverse Studio':
-      return <PixversePromptForm model="Pixverse" onPromptGenerated={handlePromptGenerated} />;
+      return <PixversePromptForm model="Pixverse" onPromptGenerated={handleFinalPrompt} />;
     case 'Midjourney Video Studio':
-      return <MidjourneyVideoPromptForm model="Midjourney" onPromptGenerated={handlePromptGenerated} />;
+      return <MidjourneyVideoPromptForm model="Midjourney" onPromptGenerated={handleFinalPrompt} />;
     default:
       return <div>Form not found.</div>;
   }
@@ -78,13 +78,11 @@ const ActionButtons = () => {
               <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto bg-background border-border p-0">
                 <SheetHeader className="p-6 bg-muted/50 border-b">
                   <SheetTitle className="text-2xl text-foreground">{button.title}</SheetTitle>
-                  {/* ADDED THIS DESCRIPTION TO FIX THE WARNING */}
                   <SheetDescription className="sr-only">
                     A form for generating prompts for the {button.title}.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="p-6">
-                  {/* Use the new helper component to render the correct form */}
                   <StudioComponent name={button.title} />
                 </div>
               </SheetContent>
