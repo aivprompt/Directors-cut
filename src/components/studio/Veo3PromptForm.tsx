@@ -1,190 +1,177 @@
-// src/components/studio/Veo3PromptForm.tsx
-
-import React, { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-
-import { Button } from '@/components/ui/button';
+"use client";
+import { useState } from "react";
+import { Target, Lightbulb, Mic, Film, Copy } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Target } from 'lucide-react'; // Bullseye Icon
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
-// 1. Define the shape of your form with Zod
-const formSchema = z.object({
-  basicIdea: z.string().min(10, {
-    message: 'Please describe your idea in at least 10 characters.',
-  }),
-  style: z.string().optional(),
-  cameraAngle: z.string().optional(),
-  lighting: z.string().optional(),
-});
-
-// Define the props the component receives
 interface Veo3PromptFormProps {
-  onPromptGenerated: (finalPrompt: string) => void;
+  onPromptGenerated: (prompt: string) => void;
 }
 
-// 2. The Complete Component
-const Veo3PromptForm = ({ onPromptGenerated }: Veo3PromptFormProps) => {
+const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
+
+const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, onBullseyeClick: () => Promise<void>, description: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={label} className="font-semibold">{label}</Label>
+    <div className="relative">
+      <Textarea id={label} placeholder={placeholder} value={value} onChange={onChange} className="min-h-[80px] pr-10" />
+      <button type="button" onClick={onBullseyeClick} className="absolute top-2.5 right-2.5 p-1 rounded-full bg-background/50" title={`Enhance ${label} with AI`}><Target size={20} className="text-red-500" /></button>
+    </div>
+    <p className="text-xs text-muted-foreground pt-1">{description}</p>
+  </div>
+);
+
+const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
+  <div className="space-y-1.5"><Label htmlFor={label}>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
+);
+
+const styleOptions = ["Cinematic", "Photorealistic", "Anime", "Documentary", "3D Animation", "Vibrant Color"];
+const shotOptions = ["Wide Shot", "Medium Shot", "Close-up", "Drone Shot"];
+const motionOptions = ["Slow Pan Left", "Dolly Zoom", "Static", "Handheld"];
+const lightingOptions = ["Golden Hour", "Dramatic Lighting", "Soft Natural Light"];
+const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3"];
+
+export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerated: (prompt: string) => void; }) {
+  // State for all form fields
+  const [character, setCharacter] = useState("");
+  const [scene, setScene] = useState("");
+  const [negative, setNegative] = useState("");
+  const [style, setStyle] = useState("Cinematic");
+  const [shot, setShot] = useState("");
+  const [motion, setMotion] = useState("");
+  const [lighting, setLighting] = useState("");
+  const [aspect, setAspect] = useState("16:9");
+  const [duration, setDuration] = useState(5);
+  const [audioDesc, setAudioDesc] = useState("");
+  const [dialogue, setDialogue] = useState("");
+
+  // State for AI features
+  const [variants, setVariants] = useState<string[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState('');
+  const [finalPrompt, setFinalPrompt] = useState("");
 
-  // Set up the form using react-hook-form
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      basicIdea: '',
-      style: '',
-      cameraAngle: '',
-      lighting: '',
-    },
-  });
-
-  // 3. This function calls your API for suggestions
-  const handleGetSuggestions = async () => {
-    const basicIdea = form.getValues('basicIdea'); // Get text from the form field
-    if (!basicIdea) {
-      alert('Please enter a basic idea first.');
-      return;
-    }
-
+  // Function to call the variant generation API
+  const handleEnhance = async (fieldType: 'character' | 'scene') => {
+    const inputText = fieldType === 'character' ? character : scene;
+    if (!inputText) return alert("Please enter some text before enhancing.");
     setIsLoading(true);
-    setSuggestions(''); // Clear previous suggestions
-
     try {
-      const response = await fetch('/api/generate-variants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: basicIdea }), // Send the text
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get suggestions.');
-      }
-
+      const response = await fetch('/api/generate-variants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: inputText }) });
       const data = await response.json();
-      setSuggestions(data.suggestions); // Store the suggestions
-    } catch (error: any) {
-      console.error('Error:', error);
-      alert(error.message);
+      if (!response.ok) throw new Error(data.message);
+      setVariants(data.variants);
+      setActiveField(fieldType);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch variants:", error);
+      alert("Failed to get suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 4. This function runs when the main "Generate" button is clicked
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Combine all the form fields into a final, engineered prompt
-    const finalPrompt = `
-      ${values.basicIdea}. 
-      Style: ${values.style || 'cinematic'}. 
-      Camera Angle: ${values.cameraAngle || 'eye-level'}. 
-      Lighting: ${values.lighting || 'natural light'}.
-    `.trim();
+  // Function to handle selecting a variant from the dialog
+  const handleVariantSelect = (variant: string) => {
+    if (activeField === 'character') setCharacter(variant);
+    else if (activeField === 'scene') setScene(variant);
+    setIsDialogOpen(false);
+  };
 
-    onPromptGenerated(finalPrompt);
-  }
+  // Function for the main "Generate" button
+  const handleGenerateClick = async () => {
+    setIsLoading(true);
+    setFinalPrompt("");
+    const payload = { targetModel: 'Veo 3+ Studio', inputs: { character, scene, negative, style, shot, motion, lighting, aspect, duration, audioDesc, dialogue } };
+    try {
+      const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      setFinalPrompt(data.finalPrompt);
+      onPromptGenerated(data.finalPrompt);
+    } catch (error) {
+      alert("Failed to generate the final prompt.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // 5. This is your UI (JSX)
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="basicIdea"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Basic Idea</FormLabel>
-              <div className="flex items-center space-x-2">
-                <FormControl>
-                  <Textarea
-                    placeholder="A majestic whale breaching the ocean surface at sunset"
-                    {...field}
-                    rows={4}
-                  />
-                </FormControl>
-                {/* This is your "bullseye" button */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleGetSuggestions}
-                  disabled={isLoading}
-                >
-                  <Target className="h-4 w-4" />
-                </Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <>
+      <div className="space-y-6">
+        <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Veo Works</AlertTitle><AlertDescription>Veo understands complex narratives. Be descriptive and leverage its unique audio and dialogue generation capabilities.</AlertDescription></Alert>
+        
+        <Card><CardHeader><CardTitle>Visual Foundation</CardTitle></CardHeader><CardContent className="space-y-4">
+          <PromptField label="Character & Action" placeholder="e.g., A brave explorer discovering a hidden waterfall" value={character} onChange={(e) => setCharacter(e.target.value)} onBullseyeClick={() => handleEnhance('character')} description={<>Click the {InlineIcon} to generate 3 character variants.</>} />
+          <PromptField label="Scene & Environment" placeholder="e.g., A lush, vibrant jungle with bioluminescent plants" value={scene} onChange={(e) => setScene(e.target.value)} onBullseyeClick={() => handleEnhance('scene')} description={<>Click the {InlineIcon} to generate 3 scene variants.</>} />
+        </CardContent></Card>
+        
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><Film className="w-5 h-5" />Cinematic & Style Controls</CardTitle></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SelectField label="Artistic Style" placeholder="Style" value={style} onChange={setStyle} options={styleOptions} />
+          <SelectField label="Lighting Style" placeholder="Lighting" value={lighting} onChange={setLighting} options={lightingOptions} />
+          <SelectField label="Camera Shot" placeholder="Shot Type" value={shot} onChange={setShot} options={shotOptions} />
+          <SelectField label="Camera Motion" placeholder="Motion" value={motion} onChange={setMotion} options={motionOptions} />
+        </CardContent></Card>
 
-        {/* Display suggestions from the API call */}
-        {suggestions && (
-          <div className="p-4 bg-muted/50 border rounded-md">
-            <p className="text-sm font-medium">Suggestion:</p>
-            <p className="text-sm text-muted-foreground">{suggestions}</p>
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><Mic className="w-5 h-5" /> Audio & Dialogue</CardTitle></CardHeader><CardContent className="space-y-4">
+          <div className="space-y-1.5"><Label>Audio Description</Label><Input placeholder="e.g., sound of rushing water, birds chirping" value={audioDesc} onChange={e => setAudioDesc(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Dialogue</Label><Textarea placeholder="Character A: 'We finally made it.'" value={dialogue} onChange={e => setDialogue(e.target.value)} className="min-h-[60px]" /></div>
+        </CardContent></Card>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5"><Label>Negative Prompt</Label><Input placeholder="e.g., blurry, cartoon, text" value={negative} onChange={e => setNegative(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspect} onValueChange={setAspect}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectRatioOptions.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
+        </div>
+        
+        <div className="space-y-1.5"><Label>Duration ({duration}s)</Label><Slider min={2} max={15} step={1} value={[duration]} onValueChange={([v]) => setDuration(v)} /></div>
+        
+        <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">
+          {isLoading ? 'Generating...' : '✨ Generate Veo Prompt'}
+        </Button>
+
+        {finalPrompt && (
+          <div className="space-y-1.5 pt-4">
+            <Label className="font-medium text-lg">Final Veo Prompt</Label>
+            <div className="relative">
+              <Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" />
+              <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="style"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Style</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Hyperrealistic, Anime" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="cameraAngle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Camera Angle</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Low angle shot" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lighting"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Lighting</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Golden hour" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Loading...' : 'Generate Advanced Prompt'}
-        </Button>
-      </form>
-    </Form>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>
+          <div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
-
-export default Veo3PromptForm;
