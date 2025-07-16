@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Target, Lightbulb, Mic, MessageSquare, Film } from "lucide-react";
+import { Target, Lightbulb, Mic, MessageSquare, Film, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Veo3PromptFormProps { onPromptGenerated: (prompt: string) => void; }
 
@@ -54,23 +48,12 @@ export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProp
   const [duration, setDuration] = useState(5);
   const [audioDesc, setAudioDesc] = useState("");
   const [dialogue, setDialogue] = useState("");
-
-  // State for the AI variant dialog
   const [variants, setVariants] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [finalPrompt, setFinalPrompt] = useState("");
 
-  useEffect(() => {
-    // This is the placeholder logic for the main generate button
-    const visualPrompt = [character, scene, shot, motion, lighting, style].filter(Boolean).join(', ');
-    const audioPrompt = [audioDesc && `Audio: ${audioDesc}`, dialogue && `Dialogue: "${dialogue}"`].filter(Boolean).join('. ');
-    const params = [negative && `--no ${negative}`, aspect && `--ar ${aspect}`, duration && `--duration ${duration}s`].filter(Boolean).join(' | ');
-    const finalPrompt = `${visualPrompt}. ${audioPrompt} ${params}`.trim().replace(/\. /g, '. ').replace(/, \./g, '.');
-    onPromptGenerated(finalPrompt);
-  }, [character, scene, negative, style, shot, motion, lighting, aspect, duration, audioDesc, dialogue, onPromptGenerated]);
-
-  // Function to call the variant generation API
   const handleEnhance = async (fieldType: 'character' | 'scene') => {
     const inputText = fieldType === 'character' ? character : scene;
     if (!inputText) return alert("Please enter some text before enhancing.");
@@ -83,18 +66,33 @@ export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProp
       setActiveField(fieldType);
       setIsDialogOpen(true);
     } catch (error) {
-      console.error("Failed to fetch variants:", error);
       alert("Failed to get suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Function to handle selecting a variant from the dialog
   const handleVariantSelect = (variant: string) => {
     if (activeField === 'character') setCharacter(variant);
     else if (activeField === 'scene') setScene(variant);
     setIsDialogOpen(false);
+  };
+
+  const handleGenerateClick = async () => {
+    setIsLoading(true);
+    setFinalPrompt("");
+    const payload = { targetModel: 'Veo 3+ Studio', inputs: { character, scene, negative, style, shot, motion, lighting, aspect, duration, audioDesc, dialogue } };
+    try {
+      const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      setFinalPrompt(data.finalPrompt);
+      onPromptGenerated(data.finalPrompt);
+    } catch (error) {
+      alert("Failed to generate the final prompt.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -120,15 +118,11 @@ export default function Veo3PromptForm({ onPromptGenerated }: Veo3PromptFormProp
           <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspect} onValueChange={setAspect}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectRatioOptions.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
         </div>
         <div className="space-y-1.5"><Label>Duration ({duration}s)</Label><Slider min={2} max={15} step={1} value={[duration]} onValueChange={([v]) => setDuration(v)} /></div>
-        <Button disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">
-          {isLoading ? 'Enhancing...' : '✨ Generate Veo Prompt'}
-        </Button>
+        <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : '✨ Generate Veo Prompt'}</Button>
+        {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Veo Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
       </div>
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>
-          <div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader><div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div></DialogContent>
       </Dialog>
     </>
   );

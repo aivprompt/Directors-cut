@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Target, Lightbulb, Camera } from "lucide-react";
+import { Target, Lightbulb, Camera, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,14 +38,7 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
     const [isLoading, setIsLoading] = useState(false);
     const [variants, setVariants] = useState<string[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    useEffect(() => {
-        // AI Engineer Logic for Runway
-        const descriptivePrompt = [shotStyle !== "None" ? shotStyle : '', prompt].filter(Boolean).join(', ');
-        const cameraMoves = [ pan !== "None" && `pan ${pan.toLowerCase()}`, tilt !== "None" && `tilt ${tilt.toLowerCase()}`, roll !== "None" && `roll ${roll.toLowerCase()}`, zoom !== "None" && `zoom ${zoom.toLowerCase()}` ].filter(Boolean).join(' ');
-        const finalPrompt = `${descriptivePrompt} @camera{${cameraMoves}} --style ${style.toLowerCase()} --motion ${motionAmount} --ar ${aspect} ${seed ? `--seed ${seed}` : ''} ${upscale ? '--upscale' : ''}`.trim();
-        onPromptGenerated(finalPrompt);
-    }, [prompt, seed, upscale, aspect, style, motionAmount, pan, tilt, roll, zoom, shotStyle, onPromptGenerated]);
+    const [finalPrompt, setFinalPrompt] = useState("");
 
     const handleEnhance = async () => {
         if (!prompt) return alert("Please enter some text before enhancing.");
@@ -57,7 +50,6 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
             setVariants(data.variants);
             setIsDialogOpen(true);
         } catch (error) {
-            console.error("Failed to fetch variants:", error);
             alert("Failed to get suggestions. Please try again.");
         } finally {
             setIsLoading(false);
@@ -67,6 +59,23 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
     const handleVariantSelect = (variant: string) => {
         setPrompt(variant);
         setIsDialogOpen(false);
+    };
+
+    const handleGenerateClick = async () => {
+        setIsLoading(true);
+        setFinalPrompt("");
+        const payload = { targetModel: 'Runway Gen4+ Studio', inputs: { prompt, seed, upscale, aspect, style, shotStyle, motionAmount, pan, tilt, roll, zoom } };
+        try {
+            const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            setFinalPrompt(data.finalPrompt);
+            onPromptGenerated(data.finalPrompt);
+        } catch (error) {
+            alert("Failed to generate the final prompt.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -99,7 +108,8 @@ export default function RunwayGen4PromptForm({ onPromptGenerated }: RunwayPrompt
                     <div className="space-y-1.5"><Label htmlFor="runway-seed">Seed</Label><Input id="runway-seed" type="number" placeholder="Random" value={seed ?? ""} onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)} /></div>
                 </div>
                 <div className="flex items-center space-x-2"><Checkbox id="runway-upscale" checked={upscale} onCheckedChange={(c) => setUpscale(Boolean(c))} /><Label htmlFor="runway-upscale">Upscale to 4K</Label></div>
-                <Button onClick={() => onPromptGenerated} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Enhancing...' : 'Generate Runway Prompt'}</Button>
+                <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : '✨ Generate Runway Prompt'}</Button>
+                {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Runway Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>

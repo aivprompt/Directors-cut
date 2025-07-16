@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target, Lightbulb, Camera } from "lucide-react";
+import { Target, Lightbulb, Camera, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,13 +41,7 @@ export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormPr
     const [variants, setVariants] = useState<string[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
-
-    useEffect(() => {
-        const keywords = [style, angle, shot, motion].filter(Boolean).join(', ');
-        const mainPrompt = `${character}, ${scene}, ${keywords}`.trim();
-        const params = ` --ar ${aspectRatio} --realism ${realism}`;
-        onPromptGenerated(mainPrompt + params);
-    }, [character, scene, style, shot, angle, motion, realism, aspectRatio, onPromptGenerated]);
+    const [finalPrompt, setFinalPrompt] = useState("");
 
     const handleEnhance = async (fieldType: 'character' | 'scene') => {
         const inputText = fieldType === 'character' ? character : scene;
@@ -73,6 +67,23 @@ export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormPr
         setIsDialogOpen(false);
     };
 
+    const handleGenerateClick = async () => {
+        setIsLoading(true);
+        setFinalPrompt("");
+        const payload = { targetModel: 'Kling 2.0+ Studio', inputs: { character, scene, style, shot, angle, motion, realism, aspectRatio } };
+        try {
+            const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            setFinalPrompt(data.finalPrompt);
+            onPromptGenerated(data.finalPrompt);
+        } catch (error) {
+            alert("Failed to generate final prompt.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <>
             <div className="space-y-6">
@@ -87,7 +98,8 @@ export default function KlingPromptForm({ onPromptGenerated }: KlingPromptFormPr
                 </CardContent></Card>
                 <div className="space-y-1.5"><Label>Physics Realism ({realism}%)</Label><Slider min={50} max={100} step={5} value={[realism]} onValueChange={([v]) => setRealism(v)} /></div>
                 <div className="space-y-1.5"><Label>Aspect Ratio</Label><Select value={aspectRatio} onValueChange={setAspectRatio}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aspectRatioOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select></div>
-                <Button disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Enhancing...' : 'Generate Kling Prompt'}</Button>
+                <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : 'Generate Kling Prompt'}</Button>
+                {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Kling Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>

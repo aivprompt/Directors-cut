@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target, Lightbulb } from "lucide-react";
+import { Target, Lightbulb, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,15 +46,8 @@ export default function MidjourneyVideoPromptForm({ onPromptGenerated }: Midjour
     const [isLoading, setIsLoading] = useState(false);
     const [variants, setVariants] = useState<string[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [finalPrompt, setFinalPrompt] = useState("");
 
-    useEffect(() => {
-        const keywords = [shot, angle, lighting].filter(Boolean).join(', ');
-        const mainPrompt = [prompt, keywords].filter(Boolean).join(', ');
-        const params = [ negativePrompt ? `--no ${negativePrompt}` : '', aspectRatio ? `--ar ${aspectRatio}` : '', version ? `--v ${version}` : '', chaos > 0 ? `--c ${chaos}` : '', quality !== "1" ? `--q ${quality}` : '', stylize !== 100 ? `--s ${stylize}` : '', seed ? `--seed ${seed}` : '', video ? '--video' : '' ];
-        const finalPrompt = `${mainPrompt} ${params.filter(Boolean).join(' ')}`.trim();
-        onPromptGenerated(finalPrompt);
-    }, [prompt, negativePrompt, shot, angle, lighting, version, aspectRatio, chaos, quality, stylize, seed, video, onPromptGenerated]);
-    
     const handleEnhance = async () => {
         if (!prompt) return alert("Please enter some text.");
         setIsLoading(true);
@@ -76,10 +69,27 @@ export default function MidjourneyVideoPromptForm({ onPromptGenerated }: Midjour
         setIsDialogOpen(false);
     };
 
+    const handleGenerateClick = async () => {
+        setIsLoading(true);
+        setFinalPrompt("");
+        const payload = { targetModel: 'Midjourney Video Studio', inputs: { prompt, negativePrompt, shot, angle, lighting, version, aspectRatio, chaos, quality, stylize, seed, video } };
+        try {
+            const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            setFinalPrompt(data.finalPrompt);
+            onPromptGenerated(data.finalPrompt);
+        } catch (error) {
+            alert("Failed to generate final prompt.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <>
             <div className="space-y-6">
-                <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Midjourney Works</AlertTitle><AlertDescription>Midjourney creates video from text and parameters. Choose your options below and we'll build the perfect prompt.</AlertDescription></Alert>
+                <Alert><Lightbulb className="h-4 w-4" /><AlertTitle>How Midjourney Works</AlertTitle><AlertDescription>Midjourney uses text and parameters. Choose your options below and we'll build the perfect prompt.</AlertDescription></Alert>
                 <PromptField label="Prompt Text" placeholder="e.g., A futuristic detective in a trench coat on a rainy, neon-lit street" value={prompt} onChange={(e) => setPrompt(e.target.value)} onBullseyeClick={handleEnhance} description={<>Click the {InlineIcon} to generate prompt variants.</>} />
                 <div className="space-y-1.5"><Label htmlFor="mj-negative">Negative Prompt</Label><Input id="mj-negative" placeholder="e.g., text, people, watermark" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} /></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -98,7 +108,8 @@ export default function MidjourneyVideoPromptForm({ onPromptGenerated }: Midjour
                     <div className="space-y-1.5"><Label htmlFor="mj-seed">Seed</Label><Input id="mj-seed" type="number" placeholder="Random" value={seed ?? ""} onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)} /></div>
                     <div className="flex items-end pb-1"><div className="flex items-center space-x-2"><Checkbox id="mj-video" checked={video} onCheckedChange={(checked) => setVideo(Boolean(checked))} /><Label htmlFor="mj-video">Video</Label></div></div>
                 </div>
-                <Button disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Enhancing...' : 'Generate Midjourney Prompt'}</Button>
+                <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : '✨ Generate Midjourney Prompt'}</Button>
+                {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Midjourney Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>

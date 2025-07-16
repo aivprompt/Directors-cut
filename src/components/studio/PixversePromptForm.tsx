@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Target, Lightbulb, User, Film } from "lucide-react";
+import { Target, Lightbulb, User, Film, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,14 +33,8 @@ export default function PixversePromptForm({ onPromptGenerated }: PixversePrompt
     const [isLoading, setIsLoading] = useState(false);
     const [variants, setVariants] = useState<string[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [finalPrompt, setFinalPrompt] = useState("");
 
-    useEffect(() => {
-        const keywords = [shot, lighting, style].filter(Boolean).join(', ');
-        const fullPrompt = `${prompt}, ${keywords}`.trim();
-        const params = [ negativePrompt ? `--no ${negativePrompt}` : '', seed ? `--seed ${seed}` : '', characterRef ? `--cref ${characterRef}` : '' ].filter(Boolean).join(' ');
-        onPromptGenerated(`${fullPrompt} ${params}`.trim());
-    }, [prompt, negativePrompt, shot, style, lighting, seed, characterRef, onPromptGenerated]);
-    
     const handleEnhance = async () => {
         if (!prompt) return alert("Please enter some text.");
         setIsLoading(true);
@@ -60,6 +54,23 @@ export default function PixversePromptForm({ onPromptGenerated }: PixversePrompt
     const handleVariantSelect = (variant: string) => {
         setPrompt(variant);
         setIsDialogOpen(false);
+    };
+
+    const handleGenerateClick = async () => {
+        setIsLoading(true);
+        setFinalPrompt("");
+        const payload = { targetModel: 'Pixverse Studio', inputs: { prompt, negativePrompt, shot, style, lighting, seed, characterRef } };
+        try {
+            const response = await fetch('/api/generate-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            setFinalPrompt(data.finalPrompt);
+            onPromptGenerated(data.finalPrompt);
+        } catch (error) {
+            alert("Failed to generate final prompt.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -84,7 +95,8 @@ export default function PixversePromptForm({ onPromptGenerated }: PixversePrompt
                     <div className="space-y-1.5"><Label>Negative Prompt</Label><Input placeholder="e.g., ugly, deformed hands" value={negativePrompt} onChange={e => setNegativePrompt(e.target.value)} /></div>
                     <div className="space-y-1.5"><Label htmlFor="pix-seed">Seed</Label><Input id="pix-seed" type="number" placeholder="Random" value={seed ?? ""} onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : null)} /></div>
                 </div>
-                <Button disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Enhancing...' : 'Generate Pixverse Prompt'}</Button>
+                <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium mt-4">{isLoading ? 'Generating...' : 'Generate Pixverse Prompt'}</Button>
+                {finalPrompt && (<div className="space-y-1.5 pt-4"><Label className="font-medium text-lg">Final Pixverse Prompt</Label><div className="relative"><Textarea value={finalPrompt} readOnly className="min-h-[100px] pr-10" /><Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button></div></div>)}
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader>
