@@ -84,13 +84,16 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
     try {
       const response = await fetch('/api/generate-variants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: inputText }) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message);
-      setVariants(data.variants);
+      if (!response.ok) throw new Error(data.message || 'Failed to get suggestions.');
+      
+      // *** THIS IS THE FIX: Read from data.suggestions instead of data.variants ***
+      setVariants(data.suggestions);
+
       setActiveField(fieldType);
       setIsDialogOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch variants:", error);
-      alert("Failed to get suggestions. Please try again.");
+      alert(error.message || "Failed to get suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
