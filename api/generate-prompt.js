@@ -26,13 +26,14 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { payload } = request.body;
-    if (!payload || !payload.inputs) {
-      return response.status(400).json({ error: 'Invalid payload provided.' });
+    // *** THIS IS THE FIX: We now correctly get the 'inputs' directly from the request body. ***
+    const { inputs } = request.body;
+    if (!inputs) {
+      return response.status(400).json({ error: 'Invalid payload provided. Missing inputs.' });
     }
 
     // 1. Create the detailed prompt for the AI
-    const detailedPrompt = createDetailedPrompt(payload.inputs);
+    const detailedPrompt = createDetailedPrompt(inputs);
 
     // 2. Set up the AI model with the corrected model name
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
