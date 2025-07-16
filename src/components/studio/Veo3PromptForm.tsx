@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import { useState } from "react";
 import { Target, Lightbulb, Mic, Film, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
