@@ -1,23 +1,19 @@
-// /api/generate-prompt.js
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
-// This helper function builds a detailed prompt from all the user's inputs
-const createDetailedPrompt = (inputs) => {
-  let prompt = `Create a detailed, high-quality video prompt based on the following elements:\n`;
-  if (inputs.character) prompt += `- Character & Action: ${inputs.character}\n`;
-  if (inputs.scene) prompt += `- Scene & Environment: ${inputs.scene}\n`;
-  if (inputs.style) prompt += `- Artistic Style: ${inputs.style}\n`;
-  if (inputs.shot) prompt += `- Camera Shot: ${inputs.shot}\n`;
-  if (inputs.motion) prompt += `- Camera Motion: ${inputs.motion}\n`;
-  if (inputs.lighting) prompt += `- Lighting Style: ${inputs.lighting}\n`;
-  if (inputs.audioDesc) prompt += `- Audio Description: ${inputs.audioDesc}\n`;
-  if (inputs.dialogue) prompt += `- Dialogue: "${inputs.dialogue}"\n`;
-  if (inputs.negative) prompt += `- Negative Prompt (what to avoid): ${inputs.negative}\n`;
-  prompt += `The final video should be ${inputs.duration} seconds long with a ${inputs.aspect} aspect ratio.`;
-  return prompt;
+// This is the new, more intelligent instruction manual for our AI
+const createSystemInstruction = (targetModel, inputs) => {
+  // We can have different rules for each model
+  switch (targetModel) {
+    case 'Veo 3+ Studio':
+      return `You are 'Veo-Director', an expert in crafting long-form, narrative prompts for Google's Veo 3. Your task is to take the user's structured input and rewrite it into a single, fluid, descriptive paragraph. Weave all visual elements (character, scene, style, shot, motion, lighting) into one cohesive cinematic shot description. If audio or dialogue is provided, append it at the end with the prefixes 'Audio:' and 'Dialogue:'. Finally, append all technical parameters like '--ar' and '--no' at the very end, separated by '|'.`;
+    
+    // ... other cases for Luma, Midjourney, etc. would go here ...
+    
+    default:
+      return 'You are a helpful assistant. Combine the following elements into a single, descriptive prompt.';
+  }
 };
 
 export default async function handler(request, response) {
@@ -26,24 +22,32 @@ export default async function handler(request, response) {
   }
 
   try {
-    // *** THIS IS THE FIX: We now correctly get the 'inputs' directly from the request body. ***
-    const { inputs } = request.body;
-    if (!inputs) {
-      return response.status(400).json({ error: 'Invalid payload provided. Missing inputs.' });
+    const { targetModel, inputs } = request.body;
+    if (!inputs || !targetModel) {
+      return response.status(400).json({ error: 'Invalid payload provided.' });
     }
 
-    // 1. Create the detailed prompt for the AI
-    const detailedPrompt = createDetailedPrompt(inputs);
+    // 1. Get the correct "instruction manual" for the selected AI model
+    const systemInstruction = createSystemInstruction(targetModel, inputs);
 
-    // 2. Set up the AI model with the corrected model name
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // 2. Set up the AI model with the new instructions
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash-latest',
+      systemInstruction: {
+        role: "model",
+        parts: [{ text: systemInstruction }],
+      }
+    });
 
-    // 3. Call the AI to generate the final prompt
-    const result = await model.generateContent(detailedPrompt);
+    // 3. Create a simple string of the user's inputs for the AI to process
+    const userInputString = JSON.stringify(inputs);
+
+    // 4. Call the AI to generate the final, rewritten prompt
+    const result = await model.generateContent(userInputString);
     const apiResponse = await result.response;
     const finalPrompt = apiResponse.text();
 
-    // 4. Send the successful response back
+    // 5. Send the successful response back
     return response.status(200).json({ finalPrompt });
 
   } catch (error) {
