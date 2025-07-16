@@ -15,19 +15,15 @@ export default async function handler(request, response) {
   }
 
   try {
-    // This is where your original async function logic goes.
-    // I'm adding a basic structure based on the likely goal.
-    // Please adapt it with your actual logic.
-
     const { text } = request.body; // Assuming you send a 'text' field in the body
 
     if (!text) {
       return response.status(400).json({ error: 'No text prompt provided.' });
     }
     
-    // Add your Gemini API call logic here
-    // For example:
-    const model = genAI.getGenerativeModel({ model: "gemini-pro", systemInstruction });
+    // The model name has been updated to a current, valid model.
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest", systemInstruction });
+    
     const result = await model.generateContent(text);
     const apiResponse = await result.response;
     const suggestions = apiResponse.text();
