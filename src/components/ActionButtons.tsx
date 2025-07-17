@@ -75,7 +75,8 @@ const ActionButtons = () => {
                   <div className="absolute inset-0 shadow-depth opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                 </Card>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto bg-background border-border p-0">
+              {/* THIS IS THE ONLY LINE THAT HAS BEEN CHANGED */}
+              <SheetContent side="right" className="w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl overflow-y-auto bg-background border-border p-0">
                 <SheetHeader className="p-6 bg-muted/50 border-b">
                   <SheetTitle className="text-2xl text-foreground">{button.title}</SheetTitle>
                   <SheetDescription className="sr-only">
