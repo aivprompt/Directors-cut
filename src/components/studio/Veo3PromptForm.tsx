@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Target, Lightbulb, Mic, Film, Copy, MessageSquare } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { StudioLayout } from './StudioLayout'; // Import the new layout component
+import { StudioLayout } from './StudioLayout';
 
 const InlineIcon = <Target className="inline h-3 w-3 stroke-red-600" />;
-
-// --- Helper Components ---
-const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, description }: { label: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void, onBullseyeClick: () => Promise<void>, description: React.ReactNode }) => (
+const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, description }) => (
   <div className="space-y-1.5">
     <Label htmlFor={label} className="font-semibold">{label}</Label>
     <div className="relative">
@@ -25,19 +23,17 @@ const PromptField = ({ label, placeholder, value, onChange, onBullseyeClick, des
     <p className="text-xs text-muted-foreground pt-1">{description}</p>
   </div>
 );
-
-const SelectField = ({ label, placeholder, value, onChange, options }: { label: string, placeholder: string, value: string, onChange: (value: string) => void, options: string[] }) => (
+const SelectField = ({ label, placeholder, value, onChange, options }) => (
   <div className="space-y-1.5"><Label htmlFor={label}>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
 );
 
-// --- Options ---
 const styleOptions = ["Cinematic", "Photorealistic", "Anime", "Documentary", "3D Animation", "Vibrant Color", "Monochromatic", "Surreal"];
 const shotOptions = ["Establishing Shot", "Wide Shot", "Full Shot", "Medium Shot", "Medium Close-up", "Close-up", "Extreme Close-up"];
 const motionOptions = ["Static Camera", "Slow Pan Left", "Whip Pan", "Dolly Zoom (Vertigo Shot)", "Tracking Shot", "Crane Shot Up", "Handheld Shaky Cam"];
 const lightingOptions = ["Cinematic Lighting", "Soft, Diffused Light", "Hard, Direct Light", "Low-Key Lighting (Chiaroscuro)", "Golden Hour", "Neon Lit"];
 const aspectRatioOptions = ["16:9", "9:16", "1:1", "4:3", "2.39:1"];
 
-export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerated: (prompt: string) => void; }) {
+export default function Veo3PromptForm({ onPromptGenerated }) {
   const [character, setCharacter] = useState("");
   const [scene, setScene] = useState("");
   const [negative, setNegative] = useState("");
@@ -49,16 +45,15 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
   const [duration, setDuration] = useState(5);
   const [audioDesc, setAudioDesc] = useState("");
   const [dialogue, setDialogue] = useState("");
-
-  const [variants, setVariants] = useState<string[]>([]);
+  const [variants, setVariants] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeField, setActiveField] = useState<'character' | 'scene' | null>(null);
+  const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [finalPrompt, setFinalPrompt] = useState("");
 
-  const handleEnhance = async (fieldType: 'character' | 'scene') => { /* ... same as before ... */ };
-  const handleVariantSelect = (variant: string) => { /* ... same as before ... */ };
-  const handleGenerateClick = async () => { /* ... same as before ... */ };
+  const handleEnhance = async (fieldType) => { /* ... API call logic ... */ };
+  const handleVariantSelect = (variant) => { /* ... dialog selection logic ... */ };
+  const handleGenerateClick = async () => { /* ... API call logic ... */ };
 
   const formControls = (
     <>
@@ -86,24 +81,27 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
   );
 
   const rightPanel = (
-    <>
+    <div className="space-y-6">
       <div className="space-y-1.5">
         <Label className="font-medium text-lg">Final Veo Prompt</Label>
         <div className="relative">
-          <Textarea value={finalPrompt || "Click the generate button to create your prompt..."} readOnly className="min-h-[250px] pr-10" />
+          <Textarea value={finalPrompt || "Click 'Generate' to see the final prompt here..."} readOnly className="min-h-[250px] pr-10" />
           {finalPrompt && (<Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => navigator.clipboard.writeText(finalPrompt)}><Copy className="h-4 w-4" /></Button>)}
         </div>
       </div>
       <Card>
         <CardHeader><CardTitle>Tips & Tricks</CardTitle></CardHeader>
-        <CardContent className="text-sm space-y-2 text-muted-foreground">
-          <p>• Veo excels at long, descriptive sentences.</p>
-          <p>• Mention specific emotions or moods for best results.</p>
-          <p>• The Audio & Dialogue fields are unique to Veo!</p>
+        <CardContent className="text-sm space-y-3 text-muted-foreground">
+            <p><strong>1. Show, Don't Tell:</strong> Instead of "he was sad", describe "a single tear rolled down his weathered cheek".</p>
+            <p><strong>2. Control Time:</strong> Use keywords like `time-lapse of a flower blooming` or `ultra slow-motion of a water droplet splashing`.</p>
+            <p><strong>3. Specify Film Language:</strong> Add terms like `lens flare`, `bokeh`, `grainy 16mm film texture` to your prompt for a specific look.</p>
+            <p><strong>4. Layer Audio:</strong> Create immersive soundscapes. Try `Audio: crackling fireplace, distant thunder, a ticking grandfather clock`. </p>
+            <p><strong>5. Define the Palette:</strong> Guide the colors directly. e.g., `...a moody color palette of deep blues and purples with a single, vibrant splash of crimson.`</p>
+            <p><strong>6. Use Metaphors:</strong> Veo understands abstract concepts. Try `...a city skyline that looks like a circuit board`.</p>
         </CardContent>
       </Card>
       <Button onClick={handleGenerateClick} disabled={isLoading} className="w-full py-6 text-base font-medium">{isLoading ? 'Generating...' : '✨ Generate Veo Prompt'}</Button>
-    </>
+    </div>
   );
 
   return (
@@ -111,7 +109,7 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
       <StudioLayout
         controls={formControls}
         preview={rightPanel}
-        tips={<></>} 
+        tips={<></>} // Tips are now part of the rightPanel
       />
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[625px]"><DialogHeader><DialogTitle>Choose a Variant</DialogTitle><DialogDescription>Select one of the AI-generated variants below to replace your text.</DialogDescription></DialogHeader><div className="grid gap-4 py-4">{variants.map((variant, index) => (<Button key={index} variant="outline" className="h-auto text-left whitespace-normal justify-start" onClick={() => handleVariantSelect(variant)}>{variant}</Button>))}</div></DialogContent>
@@ -119,3 +117,8 @@ export default function Veo3PromptForm({ onPromptGenerated }: { onPromptGenerate
     </>
   );
 };
+
+// --- Helper component definitions should be here if not imported from a shared file ---
+const SelectField = ({ label, placeholder, value, onChange, options }) => (
+    <div className="space-y-1.5"><Label htmlFor={label}>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger id={label}><SelectValue placeholder={placeholder} /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
+);

@@ -8,14 +8,15 @@ interface StudioLayoutProps {
 
 export const StudioLayout: React.FC<StudioLayoutProps> = ({ controls, preview, tips }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {/* Left Column: All user inputs */}
-      <div className="md:col-span-2 space-y-6">
+    // Updated to a 5-column grid for a more balanced layout on large screens
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+      {/* Left Column: All user inputs (takes up 3 of 5 columns) */}
+      <div className="lg:col-span-3 space-y-6">
         {controls}
       </div>
 
-      {/* Right Column: Prompt preview and tips */}
-      <div className="space-y-6">
+      {/* Right Column: Prompt preview and tips (takes up 2 of 5 columns) */}
+      <div className="lg:col-span-2 space-y-6">
         {preview}
         {tips}
       </div>
