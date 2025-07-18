@@ -1,47 +1,44 @@
-// /api/generate-variants.js
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-// Updated instruction to ask for a JSON array
-const systemInstruction = `You are a creative writing assistant. Based on the user's input, generate exactly three creative variations.
-You must return your response as a valid JSON array of strings.
-For example: ["variant one", "variant two", "variant three"]`;
-
-export default async function handler(request, response) {
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { text } = request.body;
-    if (!text) {
-      return response.status(400).json({ error: 'No text prompt provided.' });
-    }
-    
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest", systemInstruction });
-    
-    const result = await model.generateContent(text);
-    const apiResponse = await result.response;
-    let suggestions = [];
-
-    // Safely parse the AI's response into a JSON array
-    try {
-        // The AI might return the JSON string inside markdown backticks
-        const cleanResponse = apiResponse.text().replace(/```json\n|```/g, '');
-        suggestions = JSON.parse(cleanResponse);
-    } catch (e) {
-        console.error("Failed to parse AI response into JSON array:", apiResponse.text());
-        // Fallback if parsing fails: return the whole text as a single suggestion
-        suggestions = [apiResponse.text()];
+    const { inputText } = req.body;
+    if (!inputText) {
+      return res.status(400).json({ error: 'Missing inputText in request body' });
     }
 
-    // Send the successful response back to the client as an array
-    return response.status(200).json({ suggestions });
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      console.error('Server Configuration Error: Missing GOOGLE_API_KEY environment variable.');
+      return res.status(500).json({ error: 'Server configuration error.' });
+    }
 
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    
+    const prompt = `You are a creative writing assistant for a film director. Your task is to take a user's basic idea and enhance it into three more vivid, cinematic, and descriptive alternatives for an AI video prompt. Focus on strong verbs, evocative adjectives, and sensory details. Return the response ONLY as a valid JSON array of three strings.
+
+    User Input: "${inputText}"
+    Your Output:`;
+
+    const result = await model.generateContent(prompt);
+    const suggestions = JSON.parse(result.response.text());
+
+    return res.status(200).json({ variants: suggestions });
   } catch (error) {
-    console.error('Error in generate-variants function:', error);
-    return response.status(500).json({ error: 'Failed to get suggestions.' });
+    console.error('API Error in generate-variants:', error);
+    return res.status(500).json({ error: `Failed to get suggestions: ${error.message}` });
   }
-}
+};

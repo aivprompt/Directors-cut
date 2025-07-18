@@ -1,6 +1,8 @@
 {
   "functions": {
-    "api/generate-variants.js": {
+    "api/**/*.cjs": {
+      "memory": 1024,
+      "maxDuration": 30,
       "includeFiles": "node_modules/@google/generative-ai/**"
     }
   }
