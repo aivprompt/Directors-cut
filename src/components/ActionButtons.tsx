@@ -6,9 +6,7 @@ import {
   SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Import all your prompt form components
+import { Card } from '@/components/ui/card';
 import Veo3PromptForm from '@/components/studio/Veo3PromptForm';
 import RunwayGen4PromptForm from '@/components/studio/RunwayGen4PromptForm';
 import KlingPromptForm from '@/components/studio/KlingPromptForm';
@@ -16,29 +14,16 @@ import LumaPromptForm from '@/components/studio/LumaDreamMachinePromptForm';
 import PixversePromptForm from '@/components/studio/PixversePromptForm';
 import MidjourneyVideoPromptForm from '@/components/studio/MidjourneyVideoPromptForm';
 
-// This function can be used to display the final engineered prompt
-const handleFinalPrompt = (prompt: string) => {
-  console.log("Final Engineered Prompt:", prompt);
-  // In a real app, you might display this in a final preview box
-};
-
-// This helper component explicitly renders the correct form
 const StudioComponent = ({ name }: { name: string }) => {
+  // Each form now handles its own state and API calls internally.
   switch (name) {
-    case 'Veo 3+ Studio':
-      return <Veo3PromptForm onPromptGenerated={handleFinalPrompt} />;
-    case 'Runway Gen4+ Studio':
-      return <RunwayGen4PromptForm onPromptGenerated={handleFinalPrompt} />;
-    case 'Kling 2.0+ Studio':
-      return <KlingPromptForm model="Kling" onPromptGenerated={handleFinalPrompt} />;
-    case 'Luma Dream Machine Studio':
-      return <LumaPromptForm model="Luma" onPromptGenerated={handleFinalPrompt} />;
-    case 'Pixverse Studio':
-      return <PixversePromptForm model="Pixverse" onPromptGenerated={handleFinalPrompt} />;
-    case 'Midjourney Video Studio':
-      return <MidjourneyVideoPromptForm model="Midjourney" onPromptGenerated={handleFinalPrompt} />;
-    default:
-      return <div>Form not found.</div>;
+    case 'Veo 3+ Studio': return <Veo3PromptForm />;
+    case 'Runway Gen4+ Studio': return <RunwayGen4PromptForm />;
+    case 'Kling 2.0+ Studio': return <KlingPromptForm />;
+    case 'Luma Dream Machine Studio': return <LumaPromptForm />;
+    case 'Pixverse Studio': return <PixversePromptForm />;
+    case 'Midjourney Video Studio': return <MidjourneyVideoPromptForm />;
+    default: return <div>Form not found.</div>;
   }
 };
 
@@ -66,22 +51,17 @@ const ActionButtons = () => {
                   <div className="aspect-video bg-muted/30 flex items-center justify-center relative">
                     <img src={button.image} alt={button.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">{button.title}</h3>
                     <p className="text-muted-foreground text-sm">{button.description}</p>
                   </div>
-                  <div className="absolute inset-0 shadow-depth opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                 </Card>
               </SheetTrigger>
-              {/* THIS IS THE ONLY LINE THAT HAS BEEN CHANGED */}
-              <SheetContent side="right" className="w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl overflow-y-auto bg-background border-border p-0">
-                <SheetHeader className="p-6 bg-muted/50 border-b">
+              <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto bg-background border-border p-0">
+                <SheetHeader className="p-6 bg-muted/50 border-b sticky top-0 z-10">
                   <SheetTitle className="text-2xl text-foreground">{button.title}</SheetTitle>
-                  <SheetDescription className="sr-only">
-                    A form for generating prompts for the {button.title}.
-                  </SheetDescription>
+                  <SheetDescription className="sr-only">A form for generating prompts for the {button.title}.</SheetDescription>
                 </SheetHeader>
                 <div className="p-6">
                   <StudioComponent name={button.title} />
